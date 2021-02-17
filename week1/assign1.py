@@ -19,7 +19,7 @@ def getTokens(line):
     
     if l==4 or (l>4 and tokens[4][0] =='#'):
         ### l =4 implies impedance element
-        ### but incase a comment is present it may mislead the element type
+        ### but incase a comment is present it may misleed the element type
         ### hence total tokens apart from comments should be 4
         element,n1,n2,value = tokens[:4]
 
@@ -38,13 +38,13 @@ def getTokens(line):
             else:
                 t = 'Ind. current source'
 
-            print('{} of value {} connected from {} to {}'.format(t,value,n2,n1) )
+            print('{}({}) of value {} connected from {} to {}'.format(t,element,value,n2,n1) )
         except AssertionError as msg:  
             print(msg)
 
     elif l == 6 or (l>6 and tokens[6][0] =='#'):
         ### l =6 implies VCVS/VCCS source
-        ### but incase a comment is present it may mislead the element type
+        ### but incase a comment is present it may misleed the element type
         ### hence total tokens apart from comments should be 6
         element,n1,n2,n3,n4,value = tokens[:6]
 
@@ -53,9 +53,11 @@ def getTokens(line):
             assert n1.isalnum() and n2.isalnum() and n3.isalnum() and n4.isalnum(), "Node names need to be alphanumeric, please check Input file row"
             if element[0] =='E':
                 t='VCVS'
-            else:
+            elif element[0]=='G':
                 t = 'VCCS'
-            print('{} of value {} , connected from {} to {} and is  dependent on controlled source across {} and {}'.format(t, value,n2,n1,n4,n3))
+            else:
+                t = element
+            print('{}({}) of value {} , connected from {} to {} and is  dependent on controlled source across {} and {}'.format(t,element, value,n2,n1,n4,n3))
 
         except AssertionError as msg:  
             print(msg)
@@ -71,9 +73,11 @@ def getTokens(line):
             assert n1.isalnum() and n2.isalnum(),"Node names are alphanumeric, please check Input file row"
             if element[0]=='H':
                 t ='CCVS'
-            else:
+            elif element[0]=='F':
                 t ='CCCS'
-            print('{} of value {} , connected from {} to {} and is  dependent on current through voltgae source {}'.format(t, value,n2,n1,V))
+            else:
+                t = element
+            print('{}({}) of value {} , connected from {} to {} and is  dependent on current through voltgae source {}'.format(t,element, value,n2,n1,V))
         except AssertionError as msg:  
             print(msg)
 
@@ -98,7 +102,7 @@ if __name__ =='__main__':
                         assert len(l)>3,'The lines arent a valid circuit element'
                         contains.append(getTokens(l))
             if contains ==[]:
-                print('No circuit found check input file')
+                print('No circuit block found check input file for .end and .circuit lines')
             f.close()
     
         except FileNotFoundError :

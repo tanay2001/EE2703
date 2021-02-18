@@ -37,8 +37,9 @@ def getTokens(line):
                 t = 'Ind. voltage source'
             else:
                 t = 'Ind. current source'
-
-            print('{}({}) of value {} connected from {} to {}'.format(t,element,value,n2,n1) )
+            
+            print(value,n2,n1,element)
+            #print('{}({}) of value {} connected from {} to {}'.format(t,element,value,n2,n1) )
         except AssertionError as msg:  
             print(msg)
 
@@ -57,7 +58,8 @@ def getTokens(line):
                 t = 'VCCS'
             else:
                 t = element
-            print('{}({}) of value {} , connected from {} to {} and is  dependent on controlled source across {} and {}'.format(t,element, value,n2,n1,n4,n3))
+            print(value,n4,n3,n2,n1,element)
+            #print('{}({}) of value {} , connected from {} to {} and is  dependent on controlled source across {} and {}'.format(t,element, value,n2,n1,n4,n3))
 
         except AssertionError as msg:  
             print(msg)
@@ -77,7 +79,8 @@ def getTokens(line):
                 t ='CCCS'
             else:
                 t = element
-            print('{}({}) of value {} , connected from {} to {} and is  dependent on current through voltgae source {}'.format(t,element, value,n2,n1,V))
+            print(value,V,n2,n1,element)
+            #print('{}({}) of value {} , connected from {} to {} and is  dependent on current through voltgae source {}'.format(t,element, value,n2,n1,V))
         except AssertionError as msg:  
             print(msg)
 

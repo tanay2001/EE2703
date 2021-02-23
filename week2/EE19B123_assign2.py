@@ -132,6 +132,7 @@ def solver(node2id, source2id, element2obj,circuit, ac):
     @args source2id : type(dict) name--> id
     @args element2obj : type(dict) element name-->class instance
     @args circuit : type(dict) node --> elements connected to nodes
+    @args ac: flag for ac sources
     '''
     n = len(node2id.keys())
     k = len(source2id.keys())
@@ -154,27 +155,43 @@ def solver(node2id, source2id, element2obj,circuit, ac):
                 if i[0] in ['R','L','C']:
                     M[node2id[node],node2id[element2obj[i].node2]] += 1.0/element2obj[i].value
                     M[node2id[node],node2id[element2obj[i].node1]] -= 1.0/element2obj[i].value
-                elif i[0] =='V':
-                    M[node2id[node],source2id[i] + n -1] += 1
-                elif i[0] =='I':
-                    y[node2id[node]] += (1)*element2obj[i].value
+                if ~ac:
+                    if i[0] =='V':
+                        M[node2id[node],source2id[i] + n -1] += 1
+                    elif i[0] =='I':
+                        y[node2id[node]] += (1)*element2obj[i].value
+                else:
+                    if i[0] =='V':
+                        M[node2id[node],source2id[i] + n -1] += 1
+                    elif i[0] =='I':
+                        y[node2id[node]] += (1)*element2obj[i].value*(# e^jwt)
+
 
             for i in circuit[node]['to']:
                 #filling all to nodes values
                 if i[0] in ['R','L','C']:
                     M[node2id[node],node2id[element2obj[i].node1]] += 1.0/element2obj[i].value
                     M[node2id[node],node2id[element2obj[i].node2]] -= 1.0/element2obj[i].value
-                elif i[0]=='V':
-                    M[node2id[node],source2id[i] + n -1] += -1
-                elif i[0] =='I':
-                    y[node2id[node]] += (-1)*element2obj[i].value
+                if ac:
+                    if i[0]=='V':
+                        M[node2id[node],source2id[i] + n -1] += -1
+                    elif i[0] =='I':
+                        y[node2id[node]] += (-1)*element2obj[i].value
+                else:
+                    elif i[0]=='V':
+                        M[node2id[node],source2id[i] + n -1] += -1
+                    elif i[0] =='I':
+                        y[node2id[node]] += (-1)*element2obj[i].value*(#e^jwt)
+
 
     #populate source stuff
     for source in source2id:
         M[n-1+ source2id[source], node2id[element2obj[source].node1]] = -1
         M[n-1+ source2id[source], node2id[element2obj[source].node2]] = 1
-
-        y[n -1 + source2id[source]] = element2obj[source].value
+        if ~ac:
+            y[n -1 + source2id[source]] = element2obj[source].value
+        else:
+            y[n -1 + source2id[source]] = element2obj[source].value*(#e^jwt)
 
     return M,y
 
@@ -187,6 +204,8 @@ def cleaner(lines):
     returns circuit 
     '''
     cir =[]
+    ##TODO
+    ### change CS case to dc/ac case print out saying currently cs course isn't supported
     for l in lines:
         tokens = l.split()
         length = len(tokens)
@@ -226,6 +245,7 @@ def cleaner(lines):
                 assert n1.isalnum() and n2.isalnum(),"Node names are alphanumeric, please check Input file row"
             except AssertionError as msg:  
                 print(msg)
+
 
 
         ## remove comments from circuit

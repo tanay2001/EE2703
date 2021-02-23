@@ -1,5 +1,5 @@
 .circuit
-V1 GND 1 dc 10
+I1 GND 1 dc 10
 R1 1 2 2
 R2 2 GND 3
 R3 2 3 5 

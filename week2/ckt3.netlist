@@ -1,11 +1,9 @@
-There could be junk here!
-Since this portion does not belong to circuit definition.
 .circuit
-V1 GND 1 ac 5 0
-C1 1 2 1
-R1 2 3 1e3 ##ignore
-L1 3 GND 1e-6
+V1 GND n1 ac 1 0
+R1 n1 n2 4.5e3
+L1 n2 n3 80.96e-6
+C1 n3 GND 2.485e-12
+L2 n3 n4 80.96e-6
+R2 n4 GND 4e3
 .end
-.ac 1000 
-There could be junk here!
-Since this portion does not belong to circuit definition.
+.ac V1 1000 

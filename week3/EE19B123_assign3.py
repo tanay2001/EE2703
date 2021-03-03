@@ -8,9 +8,12 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np 
 from pylab import errorbar
+import pylab
 import pandas as pd 
 from scipy import linalg
 import scipy.special as sp
+import os
+os.chdir("/home/tanay/Documents/sem4/EE2703/week3/")
 
 #f(t) = 1.05J2(t) - 0.105t + n(t)
 def plot_function(x,y,sigma,path):
@@ -25,14 +28,13 @@ def plot_function(x,y,sigma,path):
 
     #sigma = np.logspace(-1,-3,9)
     for i, error in enumerate(sigma):
-        plt.plot(x, y['example{}'.format(i)], label ='$\sigma_{}$ = %.3f'.format(i+1)%error)
+        plt.plot(x, y[:,i], label ='$\sigma$ = %.3f'%error)
 
     true = g(x,1.05,-0.105)
     plt.plot(x,true, color ='k', label ='True Value')
     plt.legend()
-
-    
     plt.savefig(path+'.png',bbox_inches='tight')
+    print("file saved")
     plt.clf()
 
 
@@ -41,12 +43,13 @@ def g(t,A,B):
 
 
 def errorsplot(t, data, sigma,path):
-    errorbar(t[::5],data[::5,1],sigma[1],fmt='ro',label = "Error bar")
-    plt.xlabel("t",size=20)
-    plt.title("Q5:Data points for $\sigma$ = 0.1 along with exact function")
+    errorbar(t[::5],data[::5,1],sigma[0],fmt='ro',label = "Error bar")
+    plt.xlabel("t")
+    plt.title("Data points for $\sigma$ = 0.1 along with exact function")
     plt.plot(t,g(t,1.05,-0.105),label = "True value")
     plt.legend()
     plt.savefig(path+'.png',bbox_inches='tight')
+    print('file saved')
     plt.clf()
 
 
@@ -56,101 +59,100 @@ def fillM(x):
     M[:,1] = x
     return M
     
-def generateAB(i,j,step1 = 0.1,step2 = 0.01,Amin=0,Bmin = -0.2):
-    p = np.zeros((2,1))
-    p[0][0] = Amin +  step1 * i
-    p[1][0] = Bmin +step2 * j
-    return p
-
-
-def find_error_matrix(x,y,col):
-
-    yt = np.reshape(y[:,col],(101,1))
-    error = np.zeros((20,20))
+def check(x):
+    p = np.array([1.05,-0.105])
     M = fillM(x)
-    for i in range(20):
-        for j in range(20):
-            error[i,j] = np.square( np.matmul(M,generateAB(i,j)) - yt).mean()
+    pred = np.matmul(M,p)
+    true = np.array(g(x,1.05,-0.105))
+
+    return np.array_equal(pred, true)
+
+def ls_estimate(M,p):
+    try:
+        return linalg.lstsq(M,p)[0]
+    except:
+        print("could not esitmated model params for a case")
+        exit()
+
+
+def errorMatrix(x,y,col):
+
+    yt = y[:,col]
+    error = np.empty((21,21))
+    A = np.linspace(0,2,21)
+    B = np.linspace(-0.2,0,21)
+    for i in range(21):
+        for j in range(21):
+            error[i,j] = np.mean(np.square(g(x,A[i],B[j]) - yt))
     return error
 
 def contourplot(x,y, path):
-    a = np.linspace(0,2,20)
-    b = np.linspace(-0.2,0,20)
-    X, Y = np.meshgrid(a,b)
-    error = find_error_matrix(x,y,0)
-    CS = plt.contour(X,Y,error,np.linspace(0.025, 0.5 ,20))
-    plt.clabel(CS,CS.levels[:4], inline=1, fontsize=10)
-    plt.title('Contour Plot of error')
-    plt.xlabel(r'$A$',size=10)
-    plt.ylabel(r'$B$',size=10)
+    a = np.linspace(0,2,21)
+    b = np.linspace(-0.2,0,21)
+    A, B = np.meshgrid(a,b)
+    error = errorMatrix(x,y,0)
+    minimum = np.argmin(error)
+    annot = np.unravel_index(minimum,error.shape)
+    CS = pylab.contour(A,B,error,np.linspace(0.025, 0.5 ,20))
+    plt.clabel(CS,CS.levels[:4], inline=1, fontsize=8)
+    pylab.annotate('(%0.3f,%0.3f)'%(a[annot[0]],b[annot[1]]), (a[annot[0]],b[annot[1]]))
+    plt.title('Contour Plot')
+    plt.xlabel('A')
+    plt.ylabel('B')
     plt.savefig(path+'.png',bbox_inches='tight')
+    print("file saved")
+    plt.clf()
+
+def linearplot(sigma, Aerr, Berr, path):
+    pylab.plot(sigma,Aerr,'bo',label='Aerr')
+    pylab.plot(sigma,Berr,'ro',label='Berr')
+    plt.xlabel("Noise standard deviation ->")
+    plt.ylabel('MS error')
+    plt.title('Q10: Variation of error with noise')
+    plt.savefig(path+'.png',bbox_inches='tight')
+    print("file saved")
     plt.clf()
 
 
-def find(M,b):
-    return linalg.lstsq(M,b)
-
-def error_pred(pred,true):
-    return np.square(pred[0]-true[0]),np.square(pred[1]-true[1])
-
+def logplot(sigma , Aerr, Berr, path):
+    pylab.loglog(sigma,Aerr,'ro')
+    pylab.stem(sigma,Aerr,'-ro', use_line_collection=True)
+    pylab.loglog(sigma,Berr,'bo')
+    pylab.stem(sigma,(Berr),'-bo', use_line_collection=True)
+    pylab.xlabel(r'$\sigma_{n}\rightarrow$')
+    pylab.ylabel(r'MSerror$\rightarrow$')
+    plt.savefig(path+'.png',bbox_inches='tight')
+    print("file saved")
+    plt.clf()
 
 
 
 if __name__ =='__main__':
 
-    data = pd.read_csv('/home/tanay/Documents/sem4/EE2703/week3/fitting.dat', delimiter=" ", names =['time']+['example{}'.format(i) for i in range(9)])
-    #plot_function(data['time'], data.loc[:,'example0':'example8'], np.logspace(-1,-3,9),'/home/tanay/Documents/sem4/EE2703/week3/figure0')
-    #errorsplot(data['time'].values, data.loc[:,'example0':'example8'].values, np.logspace(-1,-3,9),'/home/tanay/Documents/sem4/EE2703/week3/figure1')
+    data = np.loadtxt('fitting.dat',dtype=float)
+    x  = np.array(data[:,0])
+    y = np.asarray(data)[:,1:]
+    plot_function(x,y, np.logspace(-1,-3,9),'figure0')
+    errorsplot(x,y, np.logspace(-1,-3,9),'figure1')
 
-    #A,B,e = mse(data['time'].values)
-    contourplot(data['time'].values, data.loc[:,'example0':'example8'].values,'/home/tanay/Documents/sem4/EE2703/week3/figure2')
-    AB = np.zeros((2,1))
-    x = data['time'].values
-    y = data.loc[:,'example0':'example8'].values
-    AB[0][0] = 1.05
-    AB[1][0] = -0.105
-    scl=np.logspace(-1,-3,9)
-    error_a = np.zeros(9)
-    error_b = np.zeros(9)
-    error_c = np.zeros(9)
+    contourplot(x,y,'figure2')
+    estimates =[]
+    M = fillM(x)
     for i in range(9):
-        prediction,error,_,_ = find(fillM(x),y[:,i])
-        error_a[i],error_b[i] = error_pred(prediction,AB)
-        error_c[i] = error
+        estimates.append(ls_estimate(M,y[:,i]))
+
+    e = np.asarray(estimates)
+
+    A_error = np.square(e[:,0] -1.05)
+    B_error = np.square(e[:,1] + 0.105)
+
+    sigma = np.logspace(-1,-3,9)
 
 
-    plt.plot(scl,error_a,'r--')
-    plt.scatter(scl,error_a)
-    plt.plot(scl,error_b, 'b--')
-    plt.scatter(scl,error_b)
-    plt.legend(["A","B"])
-    plt.title("Variation Of error with Noise")
-    plt.xlabel('$\sigma_n$',size=10)
-    plt.ylabel('MS Error',size=10)
-    path = '/home/tanay/Documents/sem4/EE2703/week3/figure3'
-    plt.savefig(path+'.png',bbox_inches='tight')
-    plt.clf()
+    linearplot(sigma, A_error, B_error, 'linearplot')
 
-    plt.loglog(scl,error_a,'r--',basex = 10)
-    plt.scatter(scl,error_a)
-    plt.loglog(scl,error_b, 'b--',basex = 10)
-    plt.scatter(scl,error_b)
-    plt.legend(["A","B"])
-    plt.title("Variation Of error with Noise on loglog scale")
-    plt.xlabel('$\sigma_n$',size=10)
-    plt.ylabel('MS Error',size=10)
-    path = '/home/tanay/Documents/sem4/EE2703/week3/figure4'
-    plt.savefig(path+'.png',bbox_inches='tight')
-    plt.clf()
-
-    plt.loglog(scl,error_c, 'b--',basex = 10)
-    plt.scatter(scl,error_c)
-    plt.title("Variation Of error returned by Lstsq with Noise on loglog scale")
-    plt.xlabel('$\sigma_n$',size=10)
-    plt.ylabel('MS Error',size=10)
-    path = '/home/tanay/Documents/sem4/EE2703/week3/figure5'
-    plt.savefig(path+'.png',bbox_inches='tight')
-    plt.clf()
+    logplot(sigma, A_error, B_error, 'logplot')
+    
 
 
 

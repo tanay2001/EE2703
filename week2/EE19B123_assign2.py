@@ -232,11 +232,9 @@ def cleaner(lines, flag, start, end, ac):
         elif tokens[0][0] in ['V','I']:
             try:
                 if flag and 'ac' in tokens:
-                    assert len(tokens) ==6 and flag, 'Inavlid format for sources follow Name n1 n2 ac value phase or \
-                        Make sure .ac is present '
+                    assert len(tokens) ==6 and flag, 'Inavlid format for sources follow Name n1 n2 ac value phase or Make sure .ac is present '
                 else:
-                    assert len(tokens) ==5, 'Inavlid format for sources follow Name n1 n2 dc value or \
-                        make sure ".ac" is present if using ac source'
+                    assert len(tokens) ==5, 'Inavlid format for sources follow Name n1 n2 dc value or make sure ".ac" is present if using ac source'
             except AssertionError as msg:
                 print(msg)
                 exit()
@@ -355,7 +353,7 @@ if __name__ =='__main__':
             print("current through RL is", current[0])
             print('voltage through RL is',voltage[0])
             # voltage across RL
-            print('-'*15+"only considering single frequency circuits as its mentioned so in the pdf"+'-'*15)
+            print('-'*15+"sign covention may be different as it depends on how user connects from and to terminals"+'-'*15)
 
         except FileNotFoundError :
             print("File Not Found!!")

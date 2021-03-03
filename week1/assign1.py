@@ -16,7 +16,7 @@ def getTokens(line):
     '''
     tokens = line.split()
     l = len(tokens)
-    
+    print(l)
     if l==4 or (l>4 and tokens[4][0] =='#'):
         ### l =4 implies impedance element
         ### but incase a comment is present it may misleed the element type

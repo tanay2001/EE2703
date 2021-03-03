@@ -172,7 +172,7 @@ def solver(node2id, source2id, element2obj,circuit, ac):
                     M[node2id[node],node2id[element2obj[i].node1]] += 1.0/element2obj[i].value
                     M[node2id[node],node2id[element2obj[i].node2]] -= 1.0/element2obj[i].value
                 if i[0] =='V':
-                    M[node2id[node],source2id[i] + n -1] += 1
+                    M[node2id[node],source2id[i] + n -1] += -1
                 elif i[0] =='I':
                     y[node2id[node]] += (1)*element2obj[i].value
 
@@ -183,7 +183,7 @@ def solver(node2id, source2id, element2obj,circuit, ac):
                     M[node2id[node],node2id[element2obj[i].node2]] += 1.0/element2obj[i].value
                     M[node2id[node],node2id[element2obj[i].node1]] -= 1.0/element2obj[i].value
                 if i[0]=='V':
-                    M[node2id[node],source2id[i] + n -1] += -1
+                    M[node2id[node],source2id[i] + n -1] += 1
                 elif i[0] =='I':
                     y[node2id[node]] += (-1)*element2obj[i].value
 
@@ -255,7 +255,6 @@ def cleaner(lines, flag, start, end, ac):
     return cir
             
         
-
 if __name__ =='__main__':
     try:
         assert len(sys.argv) == 2,'Please use this format : python %s <inputfile>' % sys.argv[0]
@@ -266,7 +265,7 @@ if __name__ =='__main__':
         ac_flag = False
         freq = 0
         try:
-            print('-'*15+"Accuracy is upto 1e-8 so for all terms smaller its been rounded to 0"+'-'*15)
+            print('-'*15+"Accuracy is upto 1e-9 so for all terms smaller its been rounded to 0"+'-'*15)
             with open(sys.argv[1]) as f:
                 lines = f.readlines()
                 c = 0

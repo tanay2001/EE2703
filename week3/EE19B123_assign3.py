@@ -17,12 +17,12 @@ import scipy.special as sp
 #f(t) = 1.05J2(t) - 0.105t + n(t)
 def plot_function(x,y,sigma,path):
     '''
-    saves the polt as a .png file in path
+    plots the various function values for different noise values
     path : image path 
     x is 1 dim time axis
     y is 9 dim fucntions values
     returns None
-    please give suitable file path for svaing the image as .png and uncomment the lineas 38 and 39
+    please give suitable file path for svaing the image as .png and uncomment the lines 38 and 39
     '''
 
     #sigma = np.logspace(-1,-3,9)
@@ -74,7 +74,7 @@ def ls_estimate(M,p):
     try:
         return linalg.lstsq(M,p)[0]
     except:
-        print("could not esitmated model params for a case")
+        print("could not esitmate model params for a case")
         exit()
 
 
@@ -92,7 +92,7 @@ def errorMatrix(x,y,col):
 def contourplot(x,y, path):
     '''
     plots the error matrix  contour plot
-    x : time arry
+    x : time array
     y : the noisy function values
 
     please give suitable file path and uncomment the lines 112 and 113 for saving image as .png file
@@ -100,7 +100,9 @@ def contourplot(x,y, path):
     a = np.linspace(0,2,21)
     b = np.linspace(-0.2,0,21)
     A, B = np.meshgrid(a,b)
+    #get error matrix
     error = errorMatrix(x,y,0)
+    #find minima
     minimum = np.argmin(error)
     annot = np.unravel_index(minimum,error.shape)
     CS = pylab.contour(A,B,error,np.linspace(0.025, 0.5 ,20))
@@ -120,13 +122,14 @@ def linearplot(sigma, Aerr, Berr, path):
     Aerr : array of error in estimates in A
     Berr : array of error in estimated in B 
 
-    please give suitable file path and uncomment the lines 130 and 131 for saving image as .png file
+    please give suitable file path and uncomment the lines 133 and 134 for saving image as .png file
     '''
-    pylab.plot(sigma,Aerr,'bo',label='Aerr')
-    pylab.plot(sigma,Berr,'ro',label='Berr')
+    pylab.plot(sigma,Aerr,'bo',label='Aerror')
+    pylab.plot(sigma,Berr,'ro',label='Berror')
     plt.xlabel("Noise standard deviation ->")
     plt.ylabel('MS error')
     plt.title('Variation of error with noise')
+    plt.legend()
     #plt.savefig(path+'.png',bbox_inches='tight')
     #print("file saved")
     plt.clf()
@@ -139,15 +142,16 @@ def logplot(sigma , Aerr, Berr, path):
     Aerr : array of error in estimates in A
     Berr : array of error in estimated in B 
 
-    please give suitable file path and uncomment the lines 151 and 152 for saving image as .png file
+    please give suitable file path and uncomment the lines 155 and 156 for saving image as .png file
     '''
-    pylab.loglog(sigma,Aerr,'ro')
+    pylab.loglog(sigma,Aerr,'ro', label ='Aerror')
     pylab.stem(sigma,Aerr,'-ro', use_line_collection=True)
-    pylab.loglog(sigma,Berr,'bo')
+    pylab.loglog(sigma,Berr,'bo', label = 'Berror')
     pylab.stem(sigma,(Berr),'-bo', use_line_collection=True)
     plt.title('Variation of error with noise')
     pylab.xlabel('$\sigma_{n}$')
     pylab.ylabel('MSerror')
+    plt.legend()
     #plt.savefig(path+'.png',bbox_inches='tight')
     #print("file saved")
     plt.clf()
@@ -155,14 +159,26 @@ def logplot(sigma , Aerr, Berr, path):
 
 
 if __name__ =='__main__':
+    ###reading the data file
+    try:
+        data = np.loadtxt('fitting.dat',dtype=float)
+    except FileNotFoundError:
+        print("file not found")
 
-    data = np.loadtxt('fitting.dat',dtype=float)
-    x  = np.array(data[:,0])
-    y = np.asarray(data)[:,1:]
+    x  = np.array(data[:,0]) ##time
+    y = np.asarray(data)[:,1:] ##function values
+
+    #Q3 & Q4
     plot_function(x,y, np.logspace(-1,-3,9),'Q1_main')  ## last param is file path to save image 
+    #Q5
     errorsplot(x,y, np.logspace(-1,-3,9),'Q2_error')    ## last param is file path to save image
-
+    #Q6
+    assert check(x), "failed test 6"
+    #Q8
     contourplot(x,y,'contour')
+
+
+    #computing errors for all possible values of sigma
     estimates =[]
     M = fillM(x)
     for i in range(9):
@@ -170,14 +186,14 @@ if __name__ =='__main__':
 
     e = np.asarray(estimates)
 
-    A_error = np.square(e[:,0] -1.05)
-    B_error = np.square(e[:,1] + 0.105)
+    A_error = np.abs(e[:,0] -1.05)
+    B_error = np.abs(e[:,1] + 0.105)
 
     sigma = np.logspace(-1,-3,9)
 
-
+    #Q10
     linearplot(sigma, A_error, B_error, 'linearplot') ## last param is file path to save image
-
+    #Q11
     logplot(sigma, A_error, B_error, 'logplot')  ## last param is file path to save image
     
 

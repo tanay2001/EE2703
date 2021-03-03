@@ -1,0 +1,171 @@
+%
+% LaTeX report template 
+%
+
+% This is a comment: in LaTeX everything that in a line comes
+% after a "%" symbol is treated as comment
+
+\documentclass[11pt, a4paper]{article}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{listings}
+\title{Assignment No 3} % Title
+
+\author{Tanay Dixit \\ {\small EE19B123}}
+
+\date{28-02-2021} % Date for the report
+\begin{document}		
+		
+\maketitle % Insert the title, author and date
+\begin{abstract}
+\begin{flushleft}
+
+%Create new section;it is autonumbered
+In this python assignment we study the effects of noise on the fitting process .We analyse the effect of different noise(Gaussian distribution  with different $\sigma$) applied to the Bessel Function and plot various graphs and analyse the relationship between error in the estimations of functions parameters with changing $\sigma$ \\
+\end{flushleft}
+\end{abstract}
+
+\section{Introduction}
+We generate a file fitting.dat with 10 columns. The first column is time while the remaining columns are data with a different noise amounts\\
+Noise is assumed to be normally distributed.\\
+
+The functions used is a linear combination of Bessel Function and a linear function\\
+\begin{equation*}
+f(t) = A*J_{2}(t) + B*t + n(t)
+\end{equation*}
+where A and B are constants and have values of 1.05 and 0.105 respectively\\
+n(t) is the noise function with a given $\sigma$ and is given by 
+ \begin{equation*}
+Pr(n(t)|\sigma) = \frac{1}{\sigma\sqrt{2\pi}}exp(\frac{-n(t)^2}{2\sigma^2})
+\end{equation*}
+
+where sigma are the values varying on a logscale and are obtained by the following function\\
+\begin{equation*}
+    sigma = np.logspace(-1,-3,9)
+\end{equation*}
+
+
+\section{Tasks}
+\subsection{Generation and Loading of Data}
+\par The data is generated using the code provided with the assignment.It computes the different values of the sample function using 9 different values of standard deviation.The data is stored in a .dat file with first column as time values and the rest 9 columns representing the function value with different amount of noise added.\\
+The data is read as a numpy array using \textrm{loadtxt()} function
+% put loading function 
+
+\subsection{Plotting of data}
+We first plot the different noisy functions with time t on x axis and function value on y axis. The true function value also has been plotted in black as the reference.
+\begin{figure}[!tbh]
+   	\centering
+   	\includegraphics[scale=0.6]{Q1_main.png}
+   	\caption{Various Functions}
+   	\label{fig:Data plot}
+\end{figure} 
+
+\newpage
+\subsection{Error plots}
+We visualise the error in the measurement using the \textit{errorbar()} function.
+The graph has been obtained by plotting the first column in the data file which corresponds to $sigma = 0.1$\\
+The true value has also been plotted for reference.The read bars show the intervals of uncertainty where the noisy data points could lie\\\\
+
+Here we plot the error bar for one data column:\\
+\begin{figure}[!tbh]
+   	\centering
+   	\includegraphics[scale=0.6]{Q2_error.png}
+   	\caption{Error bars for $\sigma$ = 0.1 along with exact function}
+   	\label{fig:Error bar}
+\end{figure}
+   
+
+\subsection{Matrix Generation}
+\par We transform this problem into a matrix multiplication task as it gets simpler/faster for computing 
+\begin{equation*}
+
+\centering
+     g(t,A,B) = 
+     \begin{pmatrix}
+    J_{2}(t_{1})& t_{1}\\
+    J_{2}(t_{2}) & t_{1}\\
+    ... & ...\\
+    J_{2}(t_{n})& t_{n}
+    \end{pmatrix}
+     \begin{pmatrix}
+        A \\
+        B
+    \end{pmatrix} = M\cdot p
+    
+    \end{equation*}
+
+where M matrix are the values in the data file and p matrix is the functions parameters\\
+NOTE: a simple test is performed to check if this matrix multiplication is consistent with the standard approach.
+    
+
+\subsection{Contour plots of error function}
+
+For the given function \begin{equation*}
+g(t,A,B) = AJ_{2}(t)+Bt 
+\end{equation*}  we vary the function parameters (A and B) on a linear scale and plot the error matrix for all combinations of A and B.
+
+The general error matrix is given by 
+
+\begin{equation*}
+\epsilon_{ij} =  \frac{1}{101}\sum_{n=0}^{101}(f_{k}-g(t_{k},A_{i},B_{j}))^{2}
+\end{equation*}
+
+We then plot the contour plot of $\epsilon_{ij}$\\
+\begin{figure}[!tbh]
+   	\centering
+   	\includegraphics[scale=0.6]{contour.png}  % Mention the image name within the curly braces. Image should be in the same folder as the tex file. 
+   	\caption{contour plot for $\epsilon_{ij}$ }
+   	\label{fig:Contour plot}
+   \end{figure}
+   
+From the above plot we can clearly see that there exist a single minimum.\\
+
+\newpage
+
+\subsection{Estimations}
+For estimating the values of A and B we solve for \\
+\begin{equation*}
+    argmin((M\cdot{AB} - b)^{2})
+\end{equation*}
+
+we make use of the scipy.linalg.lstq() function \\
+%maybe show function code here
+\begin{lstlisting}
+def ls_estimate(M,p):
+    return linalg.lstsq(M,p)[0]
+
+\end{lstlisting}
+\subsection{Error plots for different scales}
+
+
+\subsubsection{Linear scale}
+We plot the graph of error with changing values of $\sigma$ on a linear scale\\
+
+\begin{figure}[!tbh]
+   	\centering
+   	\includegraphics[scale=0.6]{linearplot.png}  % Mention the image name within the curly braces. Image should be in the same folder as the tex file. 
+   	\caption{A and B error in linear scale}
+   	\label{fig:A and B err in linear scale}
+\end{figure}
+   
+The errors in the estimates of A and B are non-linear with respect to $\sigma$ on the linear scale\\
+\newpage
+\subsubsection{Log scale}
+Now we plot the graph in log scale\\
+
+\begin{figure}[!tbh]
+   	\centering
+   	\includegraphics[scale=0.6]{logplot.png}  % Mention the image name within the curly braces. Image should be in the same folder as the tex file. 
+   	\caption{A and B error in log scale}
+   	\label{fig:A and B err in log scale}
+\end{figure}
+
+Here we can see the relationship is almost linear as expected, this is true because sigma varied on a log scale and hence the error was also expected to vary so as its a gaussian function.
+ 
+\section{Conclusion}
+For the given noisy function the best possible estimates for A and B were obtained by minimizing the mean squared error with the true value.It is observed that error in estimation of the model parameters changes approximately linearly with respect to $\sigma$ in the log scale 
+
+
+\end{document}
+
+ 

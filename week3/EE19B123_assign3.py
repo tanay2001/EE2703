@@ -127,11 +127,11 @@ def linearplot(sigma, Aerr, Berr, path):
     pylab.plot(sigma,Aerr,'bo',label='Aerror')
     pylab.plot(sigma,Berr,'ro',label='Berror')
     plt.xlabel("Noise standard deviation ->")
-    plt.ylabel('MS error')
+    plt.ylabel('error')
     plt.title('Variation of error with noise')
     plt.legend()
-    #plt.savefig(path+'.png',bbox_inches='tight')
-    #print("file saved")
+    plt.savefig(path+'.png',bbox_inches='tight')
+    print("file saved")
     plt.clf()
 
 
@@ -149,11 +149,11 @@ def logplot(sigma , Aerr, Berr, path):
     pylab.loglog(sigma,Berr,'bo', label = 'Berror')
     pylab.stem(sigma,(Berr),'-bo', use_line_collection=True)
     plt.title('Variation of error with noise')
-    pylab.xlabel('$\sigma_{n}$')
-    pylab.ylabel('MSerror')
+    pylab.xlabel('$\sigma_{n}$ in log scale')
+    pylab.ylabel('error(log scale)')
     plt.legend()
-    #plt.savefig(path+'.png',bbox_inches='tight')
-    #print("file saved")
+    plt.savefig(path+'.png',bbox_inches='tight')
+    print("file saved")
     plt.clf()
 
 
@@ -186,8 +186,8 @@ if __name__ =='__main__':
 
     e = np.asarray(estimates)
 
-    A_error = np.abs(e[:,0] -1.05)
-    B_error = np.abs(e[:,1] + 0.105)
+    A_error = np.abs(e[:,0] -1.05) # error in estimation of A
+    B_error = np.abs(e[:,1] + 0.105) # error in estimation of B 
 
     sigma = np.logspace(-1,-3,9)
 

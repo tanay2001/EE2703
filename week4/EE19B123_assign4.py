@@ -1,6 +1,7 @@
 import numpy as np 
 import matplotlib.pyplot as plt 
 from scipy.integrate import quad 
+from scipy.linalg import lstsq
 def exponential(x):
     return np.exp(x)
 
@@ -9,7 +10,7 @@ def coscos(x):
 
 
 class wrapperplots():
-    def __init__(self, xrange = None ,label = None, yrange = None, path  = None,icon ='bo', plottype = 'plot', clear  = True, save = True):
+    def __init__(self, xrange = None ,label = None, yrange = None, path  = None,icon ='r-', plottype = 'plot', clear  = True, save = True):
         super(wrapperplots, self).__init__()
         self.Xrange = xrange
         self.Yrange = yrange
@@ -45,7 +46,7 @@ class wrapperplots():
         elif self.plottype =='semilogx':
             self.ax.semilogx(x, y, self.icon)
         elif self.plottype =='loglog':
-            self.ax.loglog(x, y)
+            self.ax.loglog(x, y, self.icon)
         else:
             print("not supported")
         if self.saver:
@@ -62,7 +63,7 @@ class wrapperplots():
 def plotdata(x,y, xrange = None ,label = None, yrange = None, path  = None, plottype = None, clear  = True):
     assert len(x) ==len(y), "fucntions not same length"
     if plottype =='semilogy': #TODO ad more plot types
-        plt.semilogy(x,y, label =label)
+        plt.semilogy(x,y,'ro' ,label =label)
     else:
         plt.plot(x,y, label = label)
     plt.grid(True)
@@ -87,6 +88,18 @@ def fourier_coeff(n,func):
         coeff[i] = quad(v,0,2*np.pi,args=(i/2))[0]/np.pi
     return coeff
 
+def leastSquareCoef(func):
+    A = np.empty((400,51))
+    x = np.linspace(0,2*np.pi, 401)
+    x = x[:-1]
+    A[:,0] =1 
+    for i in range(1,26):
+        A[:,2*i-1] = np.cos(i*x)
+        A[:,2*i] = np.sin(i*x)
+    b = func(x)
+
+    return A, b
+
 
 if __name__ == "__main__":
     x = np.linspace(-2*np.pi,4*np.pi,300)
@@ -101,18 +114,43 @@ if __name__ == "__main__":
     #plotdata(x, y, xrange=(-2*np.pi, 4*np.pi), path = 'exp_plot',label= 'predicted fucntion', plottype='semilogy')
 
 
-    tr = wrapperplots(xrange=(-2*np.pi, 4*np.pi),label='cos(cos(x))', path = 'cos_plot2')
-    tr(x, coscos(x))
+    #tr = wrapperplots(xrange=(-2*np.pi, 4*np.pi),label='cos(cos(x))', path = 'cos_plot2')
+    #tr(x, coscos(x))
 
     #plotdata(x, coscos(x), xrange=(-2*np.pi, 4*np.pi),label='cos(cos(x))', path = 'cos_plot')
 
-    coef1 = fourier_coeff(51, coscos)
-    print(coef1[0])
-    exit()
+    Fcoef_cos = fourier_coeff(51,coscos)
+    Fcoef_exp = fourier_coeff(51,exponential)
 
-    cos_ff = wrapperplots(icon= 'ro',xrange= (1,51),plottype='semilogy', path='coeff_cos_semilog')
-    cos_ff(range(51), coef1)
-    
+    #cos_ff = wrapperplots(icon= 'ro',plottype='semilogy', path='coeff_cos_semilog')
+    #cos_ff(range(1,52), np.abs(Fcoef_cos))
+
+
+    ##############################################################################################################
+
+    A, bexp = leastSquareCoef(exponential)
+    Lcoef_exp = lstsq(A,bexp)[0]
+
+    A, bcos = leastSquareCoef(coscos)
+    Lcoef_cos = lstsq(A,bcos)[0]
+
+    #cos_ff = wrapperplots(icon= 'ro',plottype='semilogy', path='lstq_cos')
+    #cos_ff(range(1,52), np.abs(Lcoef_cos))
+
+
+    #cos_ff = wrapperplots(icon= 'ro',plottype='semilogy', path='lstq_exp')
+    #cos_ff(range(1,52), np.abs(Lcoef_exp))
+
+    plt.semilogy(range(1,52), np.abs(Lcoef_exp), 'ro')
+    plt.savefig("example.png")
+
+
+    ###########################################################################################################################
+
+
+
+
+
 
 
 

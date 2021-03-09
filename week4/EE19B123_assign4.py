@@ -75,9 +75,12 @@ def fourier_coeff(n,func):
     coeff = np.empty(n)
     u = lambda x,k: func(x)*np.cos(k*x)
     v = lambda x,k: func(x)*np.sin(k*x)
+    #a0
     coeff[0]= quad(func,0,2*np.pi)[0]/(2*np.pi)
+    #bn
     for i in range(1,n,2): 
         coeff[i] = quad(u,0,2*np.pi,args=((i+1)/2))[0]/np.pi
+    #an
     for i in range(2,n,2):
         coeff[i] = quad(v,0,2*np.pi,args=(i/2))[0]/np.pi
     return coeff

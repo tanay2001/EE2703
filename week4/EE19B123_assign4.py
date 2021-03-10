@@ -69,19 +69,23 @@ def plotdata(x,y1,y2 =[] ,xname= None, yname = None ,icon = 'ro',label = 'plot',
 def fourier_coeff(n,func):
     '''
     Params
-    n: is the order up-to which to generate fourier series coefficients
+    n: is the number of fourier series coefficients wanted 
     func : is the function whose fourier coefficients are to be found 
+
+    return vector (a0,a1,b1, ....a25,b25)
     '''
     coeff = np.empty(n)
     u = lambda x,k: func(x)*np.cos(k*x)
     v = lambda x,k: func(x)*np.sin(k*x)
     #a0
     coeff[0]= quad(func,0,2*np.pi)[0]/(2*np.pi)
-    #bn
-    for i in range(1,n,2): 
-        coeff[i] = quad(u,0,2*np.pi,args=((i+1)/2))[0]/np.pi
     #an
+    for i in range(1,n,2): 
+        #save a_k in odd positions in vector  coeff (note n is total number hence pass (k+1)/2 in argument)
+        coeff[i] = quad(u,0,2*np.pi,args=((i+1)/2))[0]/np.pi
+    #bn
     for i in range(2,n,2):
+        #save b_k in even positions in  vector coeff (note n is total number hence pass k/2 in argument)
         coeff[i] = quad(v,0,2*np.pi,args=(i/2))[0]/np.pi
     return coeff
 
@@ -138,11 +142,11 @@ if __name__ == "__main__":
     Fcoef_cos = fourier_coeff(51,coscos)
     Fcoef_exp = fourier_coeff(51,exponential)
 
-    plotdata(x = range(1,52), y1 = np.abs(Fcoef_cos), xname = 'coeff', yname = 'log(value)', path = 'imgs/coef_cos_semilog',plottype='semilogy')
-    plotdata(x = range(1,52), y1 = np.abs(Fcoef_exp), xname = 'coeff', yname = 'log(value)', path = 'imgs/coef_exp_semilog',plottype='semilogy')
+    plotdata(x = range(1,52), y1 = np.abs(Fcoef_cos), xname = 'coeff number', yname = 'value (log scale)', path = 'imgs/coef_cos_semilog',plottype='semilogy')
+    plotdata(x = range(1,52), y1 = np.abs(Fcoef_exp), xname = 'coeff number', yname = 'value (log scale)', path = 'imgs/coef_exp_semilog',plottype='semilogy')
 
-    plotdata(x = range(1,52), y1 = np.abs(Fcoef_cos), xname = 'log(coeff)', yname = 'log(value)', path = 'imgs/coef_cos_log',plottype='loglog')
-    plotdata(x = range(1,52), y1 = np.abs(Fcoef_exp), xname = 'log(coeff)', yname = 'log(value)', path = 'imgs/coef_exp_log',plottype='loglog')
+    plotdata(x = range(1,52), y1 = np.abs(Fcoef_cos), xname = 'coeff number in log scale', yname = 'value (log scale)', path = 'imgs/coef_cos_log',plottype='loglog')
+    plotdata(x = range(1,52), y1 = np.abs(Fcoef_exp), xname = 'coeff number in log scale', yname = 'value (log scale)', path = 'imgs/coef_exp_log',plottype='loglog')
     
     ##############################################################################################################
 
@@ -154,17 +158,17 @@ if __name__ == "__main__":
     Acos, bcos = leastSquareCoef(coscos)
     Lcoef_cos = lstsq(Acos,bcos)[0]
 
-    plotdata(x = range(1,52), y1 = np.abs(Lcoef_cos),y2 = np.abs(Fcoef_cos),icon=['go','ro'], xname = 'coeff', yname = 'log(value)',\
-         label= ['lstq values', 'integration'], path = 'imgs/coef_cos_semilog2',plottype='semilogy')
+    plotdata(x = range(1,52), y1 = np.abs(Lcoef_cos),y2 = np.abs(Fcoef_cos),icon=['go','ro'], xname = 'coeff', yname = 'value (log scale)',\
+         label= ['lstq values', 'integration values'], path = 'imgs/coef_cos_semilog2',plottype='semilogy')
 
-    plotdata(x = range(1,52), y1 = np.abs(Lcoef_exp),y2 = np.abs(Fcoef_exp),icon=['go','ro'], xname = 'coeff', yname = 'log(value)',\
-         label= ['lstq values', 'integration'], path = 'imgs/coef_exp_semilog2',plottype='semilogy')
+    plotdata(x = range(1,52), y1 = np.abs(Lcoef_exp),y2 = np.abs(Fcoef_exp),icon=['go','ro'], xname = 'coeff', yname = 'value (log scale)',\
+         label= ['lstq values', 'integration values'], path = 'imgs/coef_exp_semilog2',plottype='semilogy')
 
-    plotdata(x = range(1,52), y1 = np.abs(Lcoef_cos),y2 =np.abs(Fcoef_cos), icon=['go','ro'], xname = 'coeff', yname = 'log(value)',\
-         label= ['lstq values', 'integration'], path = 'imgs/coef_cos_log2',plottype='loglog')
+    plotdata(x = range(1,52), y1 = np.abs(Lcoef_cos),y2 =np.abs(Fcoef_cos), icon=['go','ro'], xname = 'coeff(log scale)', yname = 'value (log scale)',\
+         label= ['lstq values', 'integration values'], path = 'imgs/coef_cos_log2',plottype='loglog')
 
-    plotdata(x = range(1,52), y1 = np.abs(Lcoef_exp),y2 = np.abs(Fcoef_exp),icon=['go','ro'], xname = 'coeff', yname = 'log(value)',\
-         label= ['lstq values', 'integration'], path = 'imgs/coef_exp_log2',plottype='loglog')
+    plotdata(x = range(1,52), y1 = np.abs(Lcoef_exp),y2 = np.abs(Fcoef_exp),icon=['go','ro'], xname = 'coeff(log scale)', yname = 'value (log scale)',\
+         label= ['lstq values', 'integration values'], path = 'imgs/coef_exp_log2',plottype='loglog')
     ###########################################################################################################################
 
     #OBTAINING PREDICTED VALUES

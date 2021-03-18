@@ -11,18 +11,44 @@ import argparse
 import mpl_toolkits.mplot3d.axes3d as p3
 
 
+
+
 class Plot():
     def __init__(self):
         '''
         '''
         pass
-    @classmethod
-    def semilogy(x,y, xlabel, ylabel, title ,marker, legend = False, grid = True ):
-        pass
+
+    @staticmethod
+    def add_stuff(func):
+        def stuff(*args, **kwargs):
+            plt.xlabel(kwargs.xlabel)
+            plt.ylabel(kwargs.ylabel)
+            plt.title(kwargs.title)
+            if kwargs.legend:
+                plt.legend()
+            
+        return stuff
 
     @classmethod
-    def loglog(x,y, xlabel, ylabel, title ,marker, legend = False, grid = True ):
-        pass
+    @add_stuff
+    def semilogy(cls,x,y, **kwargs):
+        plt.semilogy(x,y, marker = kwargs.marker, label = kwargs.label)
+        plt.savefig(kwargs.path+'.png',bbox_inches='tight')
+
+    @classmethod
+    @add_stuff
+    def loglog(cls,x,y, **kwargs):
+        plt.semilogy(x,y, marker = kwargs.marker, label = kwargs.label)
+        plt.savefig(kwargs.path+'.png',bbox_inches='tight')
+
+    @classmethod
+    @add_stuff
+    def plot3D(cls,x,y, **kwargs):
+        plt.semilogy(x,y, marker = kwargs.marker, label = kwargs.label)
+        plt.savefig(kwargs.path+'.png',bbox_inches='tight')
+
+    
 
 class PotentialSolver(Plot):
     def __init__(self,Nx, Ny,R ):
@@ -32,12 +58,13 @@ class PotentialSolver(Plot):
         self.Nx = Nx
         self.Ny = Ny
         self.radius = R
-        self.phi = self.grid()
+        self.phi, self.ids = self.grid()
+
 
         # intilise the array use a class attribute
         # 
     def __str__(self):
-        return 'The potential array is {}'.format(self.phi)
+        return f'The potential array is {self.phi}'
          
 
     def grid(self):
@@ -46,41 +73,34 @@ class PotentialSolver(Plot):
         y1 = np.linspace(-(self.Nx-1)/2,(self.Nx-1)/2,self.Nx)
         Y,X = np.meshgrid(y1,x1)
         id = np.where((X**2 + Y**2) <= ((self.radius*self.Nx)/100)**2)
-        phi[id] = 1
-        return phi 
+        phi[id] = 1.0
+        return phi, id
 
     @staticmethod
     def step(phi_new, phi_old):
+        #phi_new = 1/4 *  (               left +              right +             top +           bottom)
         phi_new[1:-1,1:-1] = 0.25*(phi_old[1:-1,0:-2]+phi_old[1:-1,2:]+phi_old[0:-2,1:-1]+phi_old[2:,1:-1]) 
         return phi_new
 
     @staticmethod
-    def callback(phi):
-        pass
+    def callback(phi, ids):
+
+        phi[1:-1,0] = phi[1:-1,1] #left side boundary condition
+        phi[1:-1,-2] = phi[1:-1,-1] #right side boundary condition
+        phi[0,1:-1] = phi[1,1:-1]    #top side 
+        phi[-1, 1:-1] = 0 # bottom side as its grounded
+        phi[ids] = 1.0
 
 
-    @classmethod
-    def trainer(cls,phi, epochs):
+    def trainer(self, epochs):
         error = np.empty(epochs)
         for i in range(epochs):
-            old_phi = phi.copy()
-            phi = step(phi, old_phi)
-            phi = callback(phi)
-            error[i] = np.max(np.abs(phi- old_phi))
+            old_phi = self.phi.copy()
+            self.phi = self.step(self.phi, old_phi)
+            self.phi = self.callback(self.phi, self.ids)
+            error[i] = np.max(np.abs(self.phi- old_phi))
             
             # 
-
-
-
-        return cls 
-
-
-
-
-
-
-
-        
 
 if __name__ =='__main__':
     parser = argparse.ArgumentParser()# use --help for support
@@ -89,3 +109,9 @@ if __name__ =='__main__':
     parser.add_argument('--radius',default=8,required = True, type=float,help='Radius of central lead')
     parser.add_argument('--Niter',default=1000,type=int,help='Number of iterations to perform', )
     args = parser.parse_args()
+
+    plate = PotentialSolver(25,25,8)
+
+    plate.trainer(1000)
+
+    plate.semilogy()

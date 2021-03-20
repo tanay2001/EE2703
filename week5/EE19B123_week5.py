@@ -9,44 +9,47 @@ import numpy as np
 import matplotlib.pyplot as plt 
 import argparse
 import mpl_toolkits.mplot3d.axes3d as p3
+import os
+os.chdir('/home/tanay/Documents/sem4/EE2703/week5')
 
 
+def add_stuf(function):
+        def fcall(*args, **kwargs): 
 
-
-class Plot():
-    def __init__(self):
-        '''
-        '''
-        pass
-
-    @staticmethod
-    def add_stuff(func):
-        def stuff(*args, **kwargs):
-            plt.xlabel(kwargs.xlabel)
-            plt.ylabel(kwargs.ylabel)
-            plt.title(kwargs.title)
-            if kwargs.legend:
+            plt.xlabel(kwargs['xlabel'])
+            plt.ylabel(kwargs['ylabel'])
+            if kwargs.get('title'):
+                plt.title(kwargs['title'])
+            if kwargs.get('legend'):
                 plt.legend()
-            
-        return stuff
+            function(*args, **kwargs)
+        return fcall
 
-    @classmethod
-    @add_stuff
-    def semilogy(cls,x,y, **kwargs):
-        plt.semilogy(x,y, marker = kwargs.marker, label = kwargs.label)
-        plt.savefig(kwargs.path+'.png',bbox_inches='tight')
 
-    @classmethod
-    @add_stuff
-    def loglog(cls,x,y, **kwargs):
-        plt.semilogy(x,y, marker = kwargs.marker, label = kwargs.label)
-        plt.savefig(kwargs.path+'.png',bbox_inches='tight')
+class Plot:
 
-    @classmethod
-    @add_stuff
-    def plot3D(cls,x,y, **kwargs):
-        plt.semilogy(x,y, marker = kwargs.marker, label = kwargs.label)
-        plt.savefig(kwargs.path+'.png',bbox_inches='tight')
+    def __init__(self):
+        super(Plot, self).__init__()
+
+
+    @add_stuf
+    def semilogy(self,x,y, **kwargs):
+        print('called')
+        plt.semilogy(x,y,kwargs['marker'], label = kwargs['label'])
+        plt.savefig(kwargs['path']+'.png',bbox_inches='tight')
+        print('File saved at {}'.format(kwargs['path']))
+
+    @add_stuf
+    def loglog(self,x,y, **kwargs):
+        plt.loglog(x,y,kwargs['marker'], label = kwargs['label'])
+        plt.savefig(kwargs['path']+'.png',bbox_inches='tight')
+        print('File saved at {}'.format(kwargs['path']))
+
+    @add_stuf
+    def plot(self,x,y, **kwargs):
+        plt.plot(x,y,kwargs['marker'], label = kwargs['label'])
+        plt.savefig(kwargs['path']+'.png',bbox_inches='tight')
+        print('File saved at {}'.format(kwargs['path']))
 
     
 
@@ -60,9 +63,6 @@ class PotentialSolver(Plot):
         self.radius = R
         self.phi, self.ids = self.grid()
 
-
-        # intilise the array use a class attribute
-        # 
     def __str__(self):
         return f'The potential array is {self.phi}'
          
@@ -84,12 +84,13 @@ class PotentialSolver(Plot):
 
     @staticmethod
     def callback(phi, ids):
-
         phi[1:-1,0] = phi[1:-1,1] #left side boundary condition
         phi[1:-1,-2] = phi[1:-1,-1] #right side boundary condition
         phi[0,1:-1] = phi[1,1:-1]    #top side 
         phi[-1, 1:-1] = 0 # bottom side as its grounded
         phi[ids] = 1.0
+
+        return phi
 
 
     def trainer(self, epochs):
@@ -100,7 +101,8 @@ class PotentialSolver(Plot):
             self.phi = self.callback(self.phi, self.ids)
             error[i] = np.max(np.abs(self.phi- old_phi))
             
-            # 
+        return error
+
 
 if __name__ =='__main__':
     parser = argparse.ArgumentParser()# use --help for support
@@ -112,6 +114,8 @@ if __name__ =='__main__':
 
     plate = PotentialSolver(25,25,8)
 
-    plate.trainer(1000)
+    loss = plate.trainer(1000)
 
-    plate.semilogy()
+    plate.plot(range(1000), loss, marker = 'r-', xlabel = 'iterations', ylabel = 'error',path = 'imgs/figure1', label = 'plot' )
+
+    plate.loglog(range(1000)[::50], loss[::50], marker = 'r-', xlabel = 'iterations', ylabel = 'error',path = 'imgs/figure2', label = 'plot' )

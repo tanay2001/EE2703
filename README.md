@@ -1,6 +1,6 @@
 # EE2703
 assignment codes for EE2703 course at IITM
-# Repositary structure
+# Repository structure
 
 each week is in the following format
 ```

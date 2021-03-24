@@ -22,12 +22,10 @@ else:
     os.mkdir('imgs')
 #########################
 
-
 def add_stuf(function):
         '''
         decorator function
         adds plot label/title/legend/save file
-
         '''
         def fcall(*args, **kwargs): 
             if kwargs.get('xlabel'):
@@ -37,14 +35,13 @@ def add_stuf(function):
             if kwargs.get('title'):
                 plt.title(kwargs['title'])
             if kwargs.get('legend'):
-                plt.legend()
+                plt.legend(('Calculated Error','Fit 1 (all iterations)','Fit 2 (>500 iterations)'))
             function(*args, **kwargs)
-
-            plt.savefig(kwargs['path']+'.png',bbox_inches='tight')
-            print('File saved at {}'.format(kwargs['path']))
-            plt.clf()
+            if not kwargs.get('not_save'):
+                plt.savefig(kwargs['path']+'.png',bbox_inches='tight')
+                print('File saved at {}'.format(kwargs['path']))
+                plt.clf()
         return fcall
-
 
 class Plot:
     '''
@@ -55,48 +52,49 @@ class Plot:
     plot3D()
     contour()
     '''
-
     def __init__(self):
         super(Plot, self).__init__()
 
     @add_stuf
     def semilogy(self,x,y, **kwargs):
-        plt.semilogy(x,y,kwargs['marker'],ms = 4, label = kwargs['label'])
+        plt.semilogy(x,y,kwargs['marker'],ms = 4)
 
     @add_stuf
     def loglog(self,x,y, **kwargs):
         plt.loglog(x,y,kwargs['marker'],ms=4, label = kwargs['label'])
 
-        
     @add_stuf
     def plot3D(self,x,y,z, **kwargs):
         fig = plt.figure() 
         ax=p3.Axes3D(fig) 
         ax.plot_surface(y, x, z.T, rstride=1, cstride=1, cmap=plt.cm.jet)
+        ax.set_zlabel(kwargs['zlabel'])
 
-    @add_stuf
-    def plotMany(self, x, y, **kwargs):
-        pass
+    def plotMany(self, x, y,count, **kwargs):
+        for i in range(count):
+            if i <count-1:
+                kwargs['not_save'] = True
+            else:
+                kwargs['not_save'] = False
+            self.semilogy(x[i],y[i],**kwargs)
 
     @add_stuf
     def contour(self, X, Y,phi, **kwargs):
         ids = kwargs.get('ids')
         x = kwargs.get('x')
         y = kwargs.get('y')
-        contour(X,Y,phi)
+        contour(Y,X[::-1],phi)
         plot(x[ids[0]],y[ids[1]],'ro')
-        #plot(ids[1]-(kwargs['Nx']-1)/2,ids[0]-(kwargs['Ny']-1)/2,kwargs['marker'])
+
 
     @add_stuf
-    def quiver(self, x, y,jx, jy, **kwargs):
-        inds = kwargs.get('ids')
-        Nx = kwargs.get('Nx')
-        Ny = kwargs.get('Ny')
-        phi = kwargs.get('phi')
+    def quiver(self, X, Y,jx, jy, **kwargs):
+        ids = kwargs.get('ids')
+        x = kwargs.get('x')
+        y = kwargs.get('y')
         fig,ax = plt.subplots()
-        fig = ax.quiver(y,x,jx[::-1, :],jy[::-1, :])
-        contour(x,y,phi)
-        pylab.plot(inds[1]-(Nx-1)/2,inds[0]-(Ny-1)/2,'ro')
+        fig = ax.quiver(Y,X[::-1],jx,jy, scale = 5)
+        plot(x[ids[0]],y[ids[1]],'ro')
     
 
 
@@ -127,18 +125,18 @@ class PotentialSolver(Plot):
         '''
         Function to setup the grid
         '''
-        phi = np.zeros((self.Nx,self.Ny))
-        self.x1 = np.linspace(-(self.Nx-1)/2,(self.Nx-1)/2,self.Nx)
-        self.y1 = np.linspace(-(self.Ny-1)/2,(self.Ny-1)/2,self.Ny)
-        self.X,self.Y = np.meshgrid(self.x1,self.y1)
-        id = np.where((self.X**2 + self.Y**2) <= self.radius*self.radius)
+        phi = np.zeros((self.Ny,self.Nx))
+        self.x1 = np.linspace(-(self.Ny-1)/2,(self.Ny-1)/2,self.Ny)
+        self.y1 = np.linspace(-(self.Nx-1)/2,(self.Nx-1)/2,self.Nx)
+        self.Y,self.X = np.meshgrid(self.y1,self.x1)
+        id = np.where((self.X**2 + self.Y**2) < self.radius*self.radius)
         phi[id] = 1.0
         return phi, id
 
     @staticmethod
-    def step(phi):
+    def step(phi, ophi):
         #phi_new = 1/4 *(left +right +top +bottom)
-        phi[1:-1,1:-1] = 0.25*(phi[1:-1,0:-2]+phi[1:-1,2:]+phi[0:-2,1:-1]+phi[2:,1:-1]) 
+        phi[1:-1,1:-1] = 0.25*(ophi[1:-1,0:-2]+ophi[1:-1,2:]+ophi[0:-2,1:-1]+ophi[2:,1:-1]) 
         return phi
 
     @staticmethod
@@ -148,10 +146,8 @@ class PotentialSolver(Plot):
         '''
         phi[1:-1,0] = phi[1:-1,1]   #left side boundary condition
         phi[1:-1,-1] = phi[1:-1,-2] #right side boundary condition
-        #phi[0,1:-1] = phi[1,1:-1]   #top side 
-        #phi[-1, 1:-1] = 0           #bottom side as its grounded
-        phi[-1, 1:-1] = phi[-2, 1:-1]
-        phi[0, 1:-1] =0
+        phi[0,1:-1] = phi[1,1:-1]   #top side 
+        phi[-1, 1:-1] = 0           #bottom side as its grounded
         phi[ids] = 1.0
         return phi
 
@@ -163,7 +159,7 @@ class PotentialSolver(Plot):
         error = np.empty(epochs)
         for i in range(epochs):
             old_phi = self.phi.copy()
-            self.phi = self.step(self.phi)
+            self.phi = self.step(self.phi, old_phi)
             self.phi = self.callback(self.phi, self.ids)
             error[i] = np.max(np.abs(self.phi- old_phi)) 
         return error
@@ -180,26 +176,29 @@ class PotentialSolver(Plot):
     @staticmethod
     def max_error(A,B,N):
         return -A*(np.exp(B*(N+0.5)))/B
+
+    @staticmethod
+    def fit(x, A, B):
+        return A*np.exp(B*x)
          
 
     def cuurents(self):
         '''
         fucntions computes the current vectors ie: Jx , Jy
         '''
-        self.Jx = np.zeros((self.Nx,self.Ny))
-        self.Jy = np.zeros((self.Nx,self.Ny))
+        self.Jx = np.zeros((self.Ny,self.Nx))
+        self.Jy = np.zeros((self.Ny,self.Nx))
 
-        self.Jy[:,1:-1] = 0.5*(self.phi[:,0:-2]-self.phi[:,2:])
-        self.Jx[1:-1,:] = 0.5*(self.phi[2:, :]-self.phi[0:-2,:])
+        self.Jx[:,1:-1] = 0.5*(self.phi[:,0:-2]-self.phi[:,2:])
+        self.Jy[1:-1,:] = 0.5*(self.phi[2:, :]-self.phi[0:-2,:])
 
         return self.Jx, self.Jy
 
 
 
-
 if __name__ =='__main__':
 
-    #using argparse for taking inputs as several inputs are needed adn argv will get confusing
+    #using argparse for taking inputs as several inputs are needed and argv will get confusing
     parser = argparse.ArgumentParser()# use --help for support
     parser.add_argument('--Nx',default=25,required = True, type=int,help='Size along the x axis')
     parser.add_argument('--Ny',default=25,required = True , type=int,help='Size along the y axis')
@@ -215,17 +214,13 @@ if __name__ =='__main__':
         path ='imgs/plate_plot',\
         ids = plate.ids, \
         x = plate.x1,\
-        y = plate.y1
-        )
+        y = plate.y1)
 
     #compute the potential function
     loss = plate.trainer(args.Niter)
-
-    A,B = plate.errorFit(range(args.Niter), loss)
-    A2,B2 = plate.errorFit(range(args.Niter)[500:],loss[500:])
-
+    
     #Task 1.1
-    plate.semilogy(range(1000), loss, \
+    plate.semilogy(range(1000)[::50], loss[::50], \
         marker = 'ro',\
         xlabel = 'iterations',\
         ylabel = 'error(log scale)',\
@@ -239,33 +234,42 @@ if __name__ =='__main__':
         path = 'imgs/figure2',\
         label = 'plot')
 
+    A,B = plate.errorFit(range(args.Niter), loss)
+    A2,B2 = plate.errorFit(range(args.Niter)[500:],loss[500:])
+
     #Task 2.1 TODO add  multiple plots cuz here u have to plot 3 in a graph
-    plate.semilogy(range(1000)[::50],plate.max_error(A,B,np.arange(0,1000,50)),\
+    l = range(1000)[::50]
+    plate.plotMany(\
+        [l]*3,\
+        [loss[::50],plate.fit(l, A,B) ,plate.fit(l , A2, B2)],\
+        count = 3, \
         marker = 'ro',\
         xlabel = 'iterations',\
         ylabel = 'error(log scale)',\
-        path = 'imgs/figure3', \
-        label = 'plot')
+        path = 'imgs/figure3')
 
     #Task 3
-    #plate.plot3D(plate.X, plate.Y, plate.phi , path ='imgs/figure4', tile ='The 3-D surface plot of the potential')
+    plate.plot3D(plate.X, plate.Y, plate.phi, \
+        path ='imgs/figure4', 
+        tile = 'The 3-D surface plot of the potential', 
+        xlabel ='x',
+        ylabel = 'y',
+        zlabel ='phi')
 
     #Task 4 , contour potential
     plate.contour(plate.X, plate.Y, plate.phi, cmap=pylab.cm.get_cmap("autumn"), \
         path ='imgs/contour_plot',\
         ids = plate.ids, \
         x = plate.x1,\
-        y = plate.y1
-        )
+        y = plate.y1 )
 
     #Task 5 , vetcor plot of currents 
     jx, jy = plate.cuurents()
-    plate.quiver(plate.x1, plate.y1, jx, jy,\
+    plate.quiver(plate.X, plate.Y, jx, jy,\
         path = 'imgs/quiver_plot',\
-        phi = plate.phi, \
+        x = plate.x1, \
         ids = plate.ids , \
-        Nx = plate.Nx,\
-        Ny = plate.Ny)
+        y = plate.y1 )
 
 
 

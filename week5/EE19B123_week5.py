@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 import argparse
 import mpl_toolkits.mplot3d.axes3d as p3
 import os
-from pylab import contour, plot
+from pylab import contour, plot, contourf, cm
 import pylab
-os.chdir('/home/tanay/Documents/sem4/EE2703/week5')
+os.chdir('/home/tanay/Documents/sem4/EE2703/week5')#TODO remove this befor submitting
 
 #########################
 #creating an imgs directory to store all png files
@@ -35,22 +35,18 @@ def add_stuf(function):
             if kwargs.get('title'):
                 plt.title(kwargs['title'])
             if kwargs.get('legend'):
-                plt.legend(('Calculated Error','Fit 1 (all iterations)','Fit 2 (>500 iterations)'))
+                plt.legend(kwargs['label'], loc ='upper right')
             function(*args, **kwargs)
-            if not kwargs.get('not_save'):
-                plt.savefig(kwargs['path']+'.png',bbox_inches='tight')
-                print('File saved at {}'.format(kwargs['path']))
-                plt.clf()
+            
+            plt.savefig(kwargs['path']+'.png',bbox_inches='tight')
+            print('File saved at {}'.format(kwargs['path']))
+            plt.clf()
         return fcall
 
 class Plot:
     '''
     Class for plotting various types of graphs namely
-    semilogy() 
-    loglog()
-    plot()
-    plot3D()
-    contour()
+    semilogy() , loglog() , plot() , plot3D(), contour(), quiver()
     '''
     def __init__(self):
         super(Plot, self).__init__()
@@ -64,19 +60,26 @@ class Plot:
         plt.loglog(x,y,kwargs['marker'],ms=4, label = kwargs['label'])
 
     @add_stuf
+    def plot(self, x, y, **kwargs):
+        plt.plot(x,y,kwargs['marker'],ms=4, label = kwargs['label'])
+
+    @add_stuf
     def plot3D(self,x,y,z, **kwargs):
         fig = plt.figure() 
         ax=p3.Axes3D(fig) 
-        ax.plot_surface(y, x, z.T, rstride=1, cstride=1, cmap=plt.cm.jet)
+        ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap=cm.jet,antialiased=False)
         ax.set_zlabel(kwargs['zlabel'])
+        ax.set_title(kwargs['title'])
+        ax.set_xlabel(kwargs['ylabel'])
+        ax.set_ylabel(kwargs['xlabel'])
 
+    @add_stuf
     def plotMany(self, x, y,count, **kwargs):
+        fig = plt.figure()
+        ax = fig.add_subplot(111)
         for i in range(count):
-            if i <count-1:
-                kwargs['not_save'] = True
-            else:
-                kwargs['not_save'] = False
-            self.semilogy(x[i],y[i],**kwargs)
+            plt.semilogy(x[i],y[i],kwargs['marker'][i],ms = 4, label =kwargs['label'][i])
+        ax.legend()
 
     @add_stuf
     def contour(self, X, Y,phi, **kwargs):
@@ -94,7 +97,8 @@ class Plot:
         y = kwargs.get('y')
         fig,ax = plt.subplots()
         fig = ax.quiver(Y,X[::-1],jx,jy, scale = 5)
-        plot(x[ids[0]],y[ids[1]],'ro')
+        ax.set_title(kwargs['title'])
+        plt.plot(x[ids[0]],y[ids[1]],'ro')
     
 
 
@@ -126,10 +130,12 @@ class PotentialSolver(Plot):
         Function to setup the grid
         '''
         phi = np.zeros((self.Ny,self.Nx))
-        self.x1 = np.linspace(-(self.Ny-1)/2,(self.Ny-1)/2,self.Ny)
-        self.y1 = np.linspace(-(self.Nx-1)/2,(self.Nx-1)/2,self.Nx)
+        #self.x1 = np.linspace(-(self.Ny-1)/2,(self.Ny-1)/2,self.Ny)
+        #self.y1 = np.linspace(-(self.Nx-1)/2,(self.Nx-1)/2,self.Nx)
+        self.x1 = np.linspace(-0.5, 0.5, self.Ny)
+        self.y1 = np.linspace(-0.5, 0.5, self.Nx)
         self.Y,self.X = np.meshgrid(self.y1,self.x1)
-        id = np.where((self.X**2 + self.Y**2) < self.radius*self.radius)
+        id = np.where((self.X**2 + self.Y**2) < (self.radius/self.Nx)**2)
         phi[id] = 1.0
         return phi, id
 
@@ -153,7 +159,7 @@ class PotentialSolver(Plot):
 
     def trainer(self, epochs):
         '''
-        fucntion used to iterate and compute the potential
+        function used to iterate and compute the potential
         epochs: number of times to iterate
         '''
         error = np.empty(epochs)
@@ -182,9 +188,9 @@ class PotentialSolver(Plot):
         return A*np.exp(B*x)
          
 
-    def cuurents(self):
+    def curents(self):
         '''
-        fucntions computes the current vectors ie: Jx , Jy
+        function computes the current vectors ie: Jx , Jy
         '''
         self.Jx = np.zeros((self.Ny,self.Nx))
         self.Jy = np.zeros((self.Ny,self.Nx))
@@ -195,6 +201,31 @@ class PotentialSolver(Plot):
         return self.Jx, self.Jy
 
 
+class Temperature(PotentialSolver): #TODO add temperature
+    def __init__(self,Nx,Ny,R):
+        super(Temperature, self).__init__(Nx,Ny,R)
+        self.temp= 300 * np.ones((self.Nx,self.Ny), dtype=float)
+
+
+    def update(self,phi):
+        phi[1:-1,0]=phi[1:-1,1] # Left Boundary
+        phi[1:-1,-1]=phi[1:-1,-2] # Right Boundary
+        phi[0,1:-1]=phi[1,1:-1] # Top Boundary
+        phi[-1,1:-1] =300 # ground
+        phi[self.ids]=300.0 #wire is at 300K
+        return phi
+
+    #laplaces equation
+    def laplace(self,temp,Jx,Jy):
+        temp[1:-1,1:-1]=0.25*(temp[1:-1,0:-2]+ temp[1:-1,2:]+ temp[0:-2,1:-1] + temp[2:,1:-1]+(Jx[1:-1,1:-1])**2 +(Jy[1:-1,1:-1])**2)
+        return temp
+
+    def __call__(self,epochs,Jx,Jy):
+        for _ in range(epochs):
+            self.temp = self.laplace(self.temp,Jx,Jy)
+            self.temp = self.update(self.temp)
+
+
 
 if __name__ =='__main__':
 
@@ -203,7 +234,7 @@ if __name__ =='__main__':
     parser.add_argument('--Nx',default=25,required = True, type=int,help='Size along the x axis')
     parser.add_argument('--Ny',default=25,required = True , type=int,help='Size along the y axis')
     parser.add_argument('--radius',default=8,required = True, type=float,help='Radius of central lead')
-    parser.add_argument('--Niter',default=1000,type=int,help='Number of iterations to perform', )
+    parser.add_argument('--Niter',default=1000,required = True ,type=int,help='Number of iterations to perform', )
     args = parser.parse_args()
 
     # create the plate instance
@@ -211,13 +242,19 @@ if __name__ =='__main__':
 
     #Task 0
     plate.contour(plate.X, plate.Y, plate.phi, cmap=pylab.cm.get_cmap("autumn"), \
-        path ='imgs/plate_plot',\
-        ids = plate.ids, \
-        x = plate.x1,\
-        y = plate.y1)
+        path ='imgs/plate_plot',ids = plate.ids,x = plate.x1,y = plate.y1,xlabel ='X',ylabel ='Y',title ='Potential plot(At start)')
 
     #compute the potential function
     loss = plate.trainer(args.Niter)
+
+    #Task 1.0
+    plate.plot(range(1000), loss, \
+        marker = 'r-',\
+        xlabel = 'iterations',\
+        ylabel = 'error',\
+        path = 'imgs/figure0',\
+        title ='Error Plot',\
+        label = 'plot')
     
     #Task 1.1
     plate.semilogy(range(1000)[::50], loss[::50], \
@@ -225,6 +262,7 @@ if __name__ =='__main__':
         xlabel = 'iterations',\
         ylabel = 'error(log scale)',\
         path = 'imgs/figure1',\
+        title ='Error plot',\
         label = 'plot')
     #Task 1.2
     plate.loglog(range(1000)[::50], loss[::50],\
@@ -232,44 +270,68 @@ if __name__ =='__main__':
         xlabel = 'iterations(log scale)',\
         ylabel = 'error(log scale)',\
         path = 'imgs/figure2',\
+        title ='Error plot' ,\
         label = 'plot')
 
     A,B = plate.errorFit(range(args.Niter), loss)
     A2,B2 = plate.errorFit(range(args.Niter)[500:],loss[500:])
 
-    #Task 2.1 TODO add  multiple plots cuz here u have to plot 3 in a graph
-    l = range(1000)[::50]
+    print('The time constant of decay is ',-1.0/B2)
+
+    #Task 2
+    l = range(1000)
     plate.plotMany(\
-        [l]*3,\
-        [loss[::50],plate.fit(l, A,B) ,plate.fit(l , A2, B2)],\
+        [l[::50],l,l[500:]],\
+        [loss[::50],plate.fit(l, A,B) ,plate.fit(l[500:] , A2, B2)],\
         count = 3, \
-        marker = 'ro',\
+        marker = ['ro','b-','m-'],\
+        legend = True, \
         xlabel = 'iterations',\
         ylabel = 'error(log scale)',\
+        label =['True Error', 'Fit 1 (all iterations)','Fit 2 (>500 iterations)' ], \
         path = 'imgs/figure3')
 
-    #Task 3
+    #Task 3 , 3D potential plot
     plate.plot3D(plate.X, plate.Y, plate.phi, \
         path ='imgs/figure4', 
-        tile = 'The 3-D surface plot of the potential', 
+        title = 'The 3-D surface plot of the potential', 
         xlabel ='x',
         ylabel = 'y',
-        zlabel ='phi')
+        zlabel =r'$\phi$')
 
     #Task 4 , contour potential
     plate.contour(plate.X, plate.Y, plate.phi, cmap=pylab.cm.get_cmap("autumn"), \
         path ='imgs/contour_plot',\
         ids = plate.ids, \
         x = plate.x1,\
-        y = plate.y1 )
+        y = plate.y1 ,\
+        xlabel ='X',\
+        ylabel ='Y',\
+        title ='Potential contour plots')
 
-    #Task 5 , vetcor plot of currents 
-    jx, jy = plate.cuurents()
+    #Task 5 , vector plot of currents 
+    jx, jy = plate.curents()
     plate.quiver(plate.X, plate.Y, jx, jy,\
         path = 'imgs/quiver_plot',\
         x = plate.x1, \
         ids = plate.ids , \
-        y = plate.y1 )
+        y = plate.y1,\
+        xlabel = 'X',\
+        ylabel ='Y',\
+        title ='Current vecotors')
+
+    #Task 6, temperature plots
+    Temp_surface = Temperature(args.Nx,args.Ny,args.radius)
+
+    #training the function
+    Temp_surface(args.Niter,jx,jy)
+
+    Temp_surface.plot3D(plate.X, plate.Y, Temp_surface.temp,\
+    title ='Temperature Plot',
+    path ='imgs/temp',
+    xlabel = 'X',
+    ylabel ='Y',
+    zlabel ='Temperature')
 
 
 

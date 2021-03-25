@@ -12,7 +12,7 @@ import mpl_toolkits.mplot3d.axes3d as p3
 import os
 from pylab import contour, plot, contourf, cm
 import pylab
-os.chdir('/home/tanay/Documents/sem4/EE2703/week5')#TODO remove this befor submitting
+#os.chdir('/home/tanay/Documents/sem4/EE2703/week5')#TODO remove this befor submitting
 
 #########################
 #creating an imgs directory to store all png files
@@ -204,18 +204,18 @@ class PotentialSolver(Plot):
 class Temperature(PotentialSolver): #TODO add temperature
     def __init__(self,Nx,Ny,R):
         super(Temperature, self).__init__(Nx,Ny,R)
-        self.temp= 300 * np.ones((self.Nx,self.Ny), dtype=float)
+        self.temp= 300 * np.ones((self.Ny,self.Nx), dtype=float)
 
 
     def update(self,phi):
-        phi[1:-1,0]=phi[1:-1,1] # Left Boundary
-        phi[1:-1,-1]=phi[1:-1,-2] # Right Boundary
-        phi[0,1:-1]=phi[1,1:-1] # Top Boundary
+        phi[1:-1,0]=phi[1:-1,1] # left boundary
+        phi[1:-1,-1]=phi[1:-1,-2] # right boundary
+        phi[0,1:-1]=phi[1,1:-1] # top boundary
         phi[-1,1:-1] =300 # ground
         phi[self.ids]=300.0 #wire is at 300K
         return phi
 
-    #laplaces equation
+    #laplace equation taking all constants as 1
     def laplace(self,temp,Jx,Jy):
         temp[1:-1,1:-1]=0.25*(temp[1:-1,0:-2]+ temp[1:-1,2:]+ temp[0:-2,1:-1] + temp[2:,1:-1]+(Jx[1:-1,1:-1])**2 +(Jy[1:-1,1:-1])**2)
         return temp
@@ -236,6 +236,11 @@ if __name__ =='__main__':
     parser.add_argument('--radius',default=8,required = True, type=float,help='Radius of central lead')
     parser.add_argument('--Niter',default=1000,required = True ,type=int,help='Number of iterations to perform', )
     args = parser.parse_args()
+    try:
+        assert args.radius < min(args.Nx, args.Ny), "Please enter valid radius"
+    except AssertionError as msg:
+        print(msg)
+        exit()
 
     # create the plate instance
     plate = PotentialSolver(args.Nx,args.Ny,args.radius)
@@ -244,11 +249,11 @@ if __name__ =='__main__':
     plate.contour(plate.X, plate.Y, plate.phi, cmap=pylab.cm.get_cmap("autumn"), \
         path ='imgs/plate_plot',ids = plate.ids,x = plate.x1,y = plate.y1,xlabel ='X',ylabel ='Y',title ='Potential plot(At start)')
 
-    #compute the potential function
+    #compute the potential function, and returing the error
     loss = plate.trainer(args.Niter)
 
     #Task 1.0
-    plate.plot(range(1000), loss, \
+    plate.plot(range(args.Niter), loss, \
         marker = 'r-',\
         xlabel = 'iterations',\
         ylabel = 'error',\
@@ -257,7 +262,7 @@ if __name__ =='__main__':
         label = 'plot')
     
     #Task 1.1
-    plate.semilogy(range(1000)[::50], loss[::50], \
+    plate.semilogy(range(args.Niter)[::50], loss[::50], \
         marker = 'ro',\
         xlabel = 'iterations',\
         ylabel = 'error(log scale)',\
@@ -265,7 +270,7 @@ if __name__ =='__main__':
         title ='Error plot',\
         label = 'plot')
     #Task 1.2
-    plate.loglog(range(1000)[::50], loss[::50],\
+    plate.loglog(range(args.Niter)[::50], loss[::50],\
         marker = 'ro',\
         xlabel = 'iterations(log scale)',\
         ylabel = 'error(log scale)',\
@@ -278,8 +283,8 @@ if __name__ =='__main__':
 
     print('The time constant of decay is ',-1.0/B2)
 
-    #Task 2
-    l = range(1000)
+    #Task 2, plotting the 2 fits with every 50th point to avoid clustering
+    l = range(args.Niter)
     plate.plotMany(\
         [l[::50],l,l[500:]],\
         [loss[::50],plate.fit(l, A,B) ,plate.fit(l[500:] , A2, B2)],\
@@ -323,9 +328,10 @@ if __name__ =='__main__':
     #Task 6, temperature plots
     Temp_surface = Temperature(args.Nx,args.Ny,args.radius)
 
-    #training the function
+    #training the function, self.Temp variable is the temperature array 
     Temp_surface(args.Niter,jx,jy)
 
+    #3D temperature variation plot
     Temp_surface.plot3D(plate.X, plate.Y, Temp_surface.temp,\
     title ='Temperature Plot',
     path ='imgs/temp',

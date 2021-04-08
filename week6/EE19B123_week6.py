@@ -15,13 +15,13 @@ import gc
 from tqdm import tqdm
 os.chdir('/home/tanay/Documents/sem4/EE2703/week6')#TODO remove this befor submitting
 
-#########################
+#===================================================
 #creating an imgs directory to store all png files
 if os.path.isdir('imgs'):
     pass
 else:
     os.mkdir('imgs')
-#########################
+#===================================================
 def save(function):
         '''
         decorator function
@@ -46,23 +46,19 @@ class plot:
     def __init__(self):
         pass
     @save
-    def plotIntensity(self, I, **kwargs):
+    def population(self, I, **kwargs):
         plt.hist(I,bins=np.arange(1,100),ec='black',alpha=0.5)
 
-    @save
-    def plotEdensity(self, X, **kwargs):
-        plt.hist(X, bins=np.arange(1,100),ec='black',alpha=0.5)
-
-    @save
     def table(self, I, **kwargs):
         a,bins,c=plt.hist(I,bins=np.arange(1,100),ec='black',alpha=0.5)
         xpos=0.5*(bins[0:-1]+bins[1:])
         d={'Position':xpos,'Count':a}
         p=pd.DataFrame(data=d)
+        p.to_csv('data.csv', index = False)
         print(p)
 
     @save
-    def plot_electron_phase_space(self, xx, u, **kwargs):
+    def phase_space(self, xx, u, **kwargs):
         plt.plot(xx,u,'x')
 
 
@@ -145,7 +141,7 @@ class simulate(plot):
             #inject more electrons
             self.inject(M, sigma)
 
-            #identify elect properties
+            #identify electron properties
             self.findElectrons() #TODO optimise by ids + numOfEadded - hits(ll)
 
         print(len(self.I), len(self.V), len(self.X))
@@ -172,8 +168,24 @@ if __name__ =='__main__':
     print('done running')
     gc.collect()
 
-    chamber.plotEdensity(X, path = 'imgs/electron_density')
-    chamber.plot_electron_phase_space(chamber.x , chamber.u, path ='imgs/phase+plot')
-    chamber.plotIntensity(I, path = 'imgs/plot_intensity')
+    #population plot of electrons density
+    chamber.population(X, path = 'imgs/electron_density',
+    title = 'Number of Electrons v/s x', \
+    xlabel ='x', \
+    ylabel=' Number of Electrons')
+
+    #population plot of light intensity
+    chamber.population(I, path = 'imgs/plot_intensity', 
+    title ='Intensity histogram', \
+    xlabe =' x', \
+    ylabel ='Intensity')
+
+    #electron phase plot 
+    chamber.phase_space(chamber.X , chamber.V, path ='imgs/phase+plot',
+    title ='Electron Phase plot',  \
+    xlable ='x', \
+    ylabel ='Velcoty')
+
+    #Intensity table
     chamber.table(I, path = 'imgs/plot-table')
 

@@ -13,7 +13,7 @@ import os
 import random
 import gc
 from tqdm import tqdm
-os.chdir('/home/tanay/Documents/sem4/EE2703/week6')#TODO remove this befor submitting
+#os.chdir('/home/tanay/Documents/sem4/EE2703/week6')#TODO remove this befor submitting
 
 #===================================================
 #creating an imgs directory to store all png files
@@ -83,6 +83,9 @@ class simulate(plot):
 
 
     def findElectrons(self):
+        """
+        Fucntion to find ids of electrons
+        """
         ids = np.where(self.x >0)[0]
         self.V.extend(self.u[ids].tolist())
         self.X.extend(self.x[ids].tolist())
@@ -99,12 +102,18 @@ class simulate(plot):
 
         
     def ionization(self,p, u0):
+        '''
+        Function for ionization
+        @Params:
+        p : probability of inonization
+        u0 : threshold velocity
+        '''
         velocity_ids = np.where(self.u >= u0)[0]
         ll =  np.where(np.random.rand(len(velocity_ids))<=p)[0]
         collision_ids = velocity_ids[ll]
         self.u[collision_ids] =0
 
-        self.x[collision_ids] -= self.dx[collision_ids]*np.random.rand() #TODO improve algo
+        self.x[collision_ids] -= self.dx[collision_ids]*np.random.rand()
         # add photon
         self.I.extend(self.x[collision_ids].tolist())
         #print('#Electrons Ionized')
@@ -142,7 +151,7 @@ class simulate(plot):
             self.inject(M, sigma)
 
             #identify electron properties
-            self.findElectrons() #TODO optimise by ids + numOfEadded - hits(ll)
+            self.findElectrons() 
 
         print(len(self.I), len(self.V), len(self.X))
         return self.I, self.V , self.X
@@ -150,13 +159,12 @@ class simulate(plot):
             
 if __name__ =='__main__':
     parser = argparse.ArgumentParser()# use --help for support
-    #TODO add required
-    parser.add_argument('--n',default=100, type=int,help='spatial grid size')
-    parser.add_argument('--M',default=5 , type=int,help='number of electrons injected per turn')
-    parser.add_argument('--nk',default=500, type=int,help='number of turns to simulate')
-    parser.add_argument('--u0',default=5,type=float,help='threshold velocity')
-    parser.add_argument('--p',default=0.25,type=float,help='probability that ionization will occur')
-    parser.add_argument('--Msigma',default=0.2,type=float,help='std in number of electrons added')
+    parser.add_argument('--n',default=100,required=True, type=int,help='spatial grid size')
+    parser.add_argument('--M',default=5 ,required=True, type=int,help='number of electrons injected per turn')
+    parser.add_argument('--nk',default=500,required=True, type=int,help='number of turns to simulate')
+    parser.add_argument('--u0',default=5,required=True,type=float,help='threshold velocity')
+    parser.add_argument('--p',default=0.25,required=True,type=float,help='probability that ionization will occur')
+    parser.add_argument('--Msigma',default=0.2,required=True,type=float,help='std in number of electrons added')
     args = parser.parse_args()
 
     x , u, dx = np.zeros(args.n*args.M), np.zeros(args.n*args.M),np.zeros(args.n*args.M)
@@ -169,23 +177,23 @@ if __name__ =='__main__':
     gc.collect()
 
     #population plot of electrons density
-    chamber.population(X, path = 'imgs/electron_density',
+    chamber.population(X, path = 'imgs/electron_density3',
     title = 'Number of Electrons v/s x', \
     xlabel ='x', \
     ylabel=' Number of Electrons')
 
     #population plot of light intensity
-    chamber.population(I, path = 'imgs/plot_intensity', 
+    chamber.population(I, path = 'imgs/plot_intensity3', 
     title ='Intensity histogram', \
     xlabe =' x', \
     ylabel ='Intensity')
 
     #electron phase plot 
-    chamber.phase_space(chamber.X , chamber.V, path ='imgs/phase+plot',
+    chamber.phase_space(chamber.X , chamber.V, path ='imgs/phase+plot3',
     title ='Electron Phase plot',  \
     xlable ='x', \
     ylabel ='Velcoty')
 
     #Intensity table
-    chamber.table(I, path = 'imgs/plot-table')
+    chamber.table(I, path = 'imgs/plot-table2')
 

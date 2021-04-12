@@ -110,7 +110,33 @@ class spring(plot):
         return sp.lsim(H,vi(time),time)
 
 if __name__=='__main__':
-    pass
+    #Q1 
+    laplace_solver = spring([1.0,0,2.25])
+    h = laplace_solver.H(1.5, -0.5)
+    t,x = sp.impulse(h,None,np.linspace(0,50,5001))
+    #plot
+
+    #Q2
+    laplace_solver = spring([1.0,0,2.25])
+    h = laplace_solver.H(1.5, -0.05)
+    t,x = sp.impulse(h,None,np.linspace(0,50,5001))
+    #plot
+
+    #Q3
+
+
+    #Q4
+    t,x  = laplace_solver.system([1,0,2],[1,0,3,0])
+    t,y = laplace_solver.system([2],[1,0,3,0])
+    #plot both
+
+
+    #Q5
+    t=np.linspace(0,30e-6,10000)
+    t,y,_ = laplace_solver.TwoPortNetwork(t,100, 1e-6 , 1e-6)
+
+
+
 
 
 

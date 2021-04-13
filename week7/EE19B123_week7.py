@@ -49,6 +49,11 @@ class plot:
     def plot(self, x, y,**kwargs):
         plt.plot(x,y)
 
+    @save
+    def plotMulti(self, x,y, **kwargs):
+        for i in range(len(y)):
+            plt.plot(x, y[i])
+
 
 class spring(plot):
     def __init__(self,coeff):
@@ -74,14 +79,16 @@ class spring(plot):
         @Params:
         FreqRange : list of possible frequencies : np.linspace(1.4,1.6,5)
         '''
-        l = []
         for f in FreqRange:
             h = sp.lti([1],self.coef)
             time = np.linspace(0,50,5001)
             u = np.cos(f*time)*np.exp(-0.05*time)
             t,x,_ = sp.lsim(h,u,time)
-            self.plot(t, x)
-            l.append("freq =" + str(f))
+            self.plot(t, x, \
+            title =f'Forced Damping Oscillator with {f}',\
+            xlabel ='t',\
+            ylabel ='x',\
+            path =f'imgs/LTI_plots{f}')
 
     @staticmethod
     def system(num, den):
@@ -94,19 +101,22 @@ class spring(plot):
         t,x = sp.impulse(X,None,np.linspace(0,50,5001))
         return t, x
 
-    @staticmethod
-    def v(t):
-        return np.cos(1000*t) -np.cos(1e6*t)
-
-    def TwoPortNetwork(self,time,R, L,C,vi = v):
+    
+    def TwoPortNetwork(self,time,R, L,C,vi = lambda t : np.cos(1000*t) -np.cos(1e6*t)):
         H = sp.lti([1],[L*C,R*C,1])
         w,S,phi = H.bode()
-        fig,(ax1,ax2) = plt.subplots(2,1)
-        ax1.set_title("Magnitude response")
-        ax1.semilogx(w,S)
-        ax2.set_title("Phase response")
-        ax2.semilogx(w,phi)
-        plt.show()
+        def plotting(w, S, phi):
+            fig,(ax1,ax2) = plt.subplots(2,1)
+            fig.set_figheight(8)
+            fig.set_figwidth(12)
+            ax1.set_title("Magnitude response")
+            ax1.semilogx(w,S)
+            ax2.set_title("Phase response")
+            ax2.semilogx(w,phi)
+            plt.savefig('imgs/2port_plots.png',bbox_inches='tight')
+
+        plotting(w,S,phi)
+
         return sp.lsim(H,vi(time),time)
 
 if __name__=='__main__':
@@ -114,22 +124,37 @@ if __name__=='__main__':
     laplace_solver = spring([1.0,0,2.25])
     h = laplace_solver.H(1.5, -0.5)
     t,x = sp.impulse(h,None,np.linspace(0,50,5001))
-    #plot
+    laplace_solver.plot(t,x, \
+    title = 'Forced Damping Oscillator with decay = 0.5' , \
+    xlabel = 't',\
+    ylabel = 'x',\
+    path = 'imgs/oscillation_1')
 
     #Q2
     laplace_solver = spring([1.0,0,2.25])
     h = laplace_solver.H(1.5, -0.05)
     t,x = sp.impulse(h,None,np.linspace(0,50,5001))
-    #plot
+    laplace_solver.plot(t,x, \
+    title = 'Forced Damping Oscillator with decay = 0.05' , \
+    xlabel = 't',\
+    ylabel = 'x',
+    path ='imgs/oscillation_2')
 
     #Q3
+    freq = np.linspace(1.4,1.6,5)
+    laplace_solver.LTI_system(freq)
 
 
     #Q4
     t,x  = laplace_solver.system([1,0,2],[1,0,3,0])
     t,y = laplace_solver.system([2],[1,0,3,0])
-    #plot both
 
+    laplace_solver.plotMulti(t,[x,y],\
+    title ='Coupled Oscilations: X and Y',\
+    xlabel ='t',\
+    ylabel ='x',
+    path ='imgs/coupled_eq',
+    label =['x','y'])
 
     #Q5
     t=np.linspace(0,30e-6,10000)

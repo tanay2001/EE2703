@@ -13,7 +13,7 @@ import random
 import gc
 from tqdm import tqdm
 import scipy.signal as sp
-os.chdir('/home/tanay/Documents/sem4/EE2703/week7')#TODO remove this befor submitting
+#os.chdir('/home/tanay/Documents/sem4/EE2703/week7')#TODO remove this befor submitting
 
 #===================================================
 #creating an imgs directory to store all png files
@@ -34,9 +34,9 @@ def save(function):
                 plt.ylabel(kwargs['ylabel'])
             if kwargs.get('title'):
                 plt.title(kwargs['title'])
-            if kwargs.get('legend'):
-                plt.legend(kwargs['label'], loc ='upper right')
             function(*args, **kwargs)
+            if kwargs.get('legend'):
+                plt.legend(loc ='upper right')
             plt.savefig(kwargs['path']+'.png',bbox_inches='tight')
             print('File saved at {}'.format(kwargs['path']))
             plt.clf()
@@ -52,7 +52,7 @@ class plot:
     @save
     def plotMulti(self, x,y, **kwargs):
         for i in range(len(y)):
-            plt.plot(x, y[i])
+            plt.plot(x, y[i], label = kwargs['label'][i])
 
 
 class spring(plot):
@@ -84,6 +84,7 @@ class spring(plot):
             time = np.linspace(0,50,5001)
             u = np.cos(f*time)*np.exp(-0.05*time)
             t,x,_ = sp.lsim(h,u,time)
+
             self.plot(t, x, \
             title =f'Forced Damping Oscillator with {f}',\
             xlabel ='t',\
@@ -102,7 +103,7 @@ class spring(plot):
         return t, x
 
     
-    def TwoPortNetwork(self,time,R, L,C,vi = lambda t : np.cos(1000*t) -np.cos(1e6*t)):
+    def TwoPortNetwork(self,time,R, L,C,plot = False,vi= None):
         H = sp.lti([1],[L*C,R*C,1])
         w,S,phi = H.bode()
         def plotting(w, S, phi):
@@ -114,14 +115,18 @@ class spring(plot):
             ax2.set_title("Phase response")
             ax2.semilogx(w,phi)
             plt.savefig('imgs/2port_plots.png',bbox_inches='tight')
-
-        plotting(w,S,phi)
-
-        return sp.lsim(H,vi(time),time)
+            plt.clf()
+        if plot:
+            plotting(w,S,phi)
+        if vi:
+            return sp.lsim(H,vi(time),time)
 
 if __name__=='__main__':
-    #Q1 
+    
+
     laplace_solver = spring([1.0,0,2.25])
+
+    #Q1=======================================================
     h = laplace_solver.H(1.5, -0.5)
     t,x = sp.impulse(h,None,np.linspace(0,50,5001))
     laplace_solver.plot(t,x, \
@@ -130,7 +135,7 @@ if __name__=='__main__':
     ylabel = 'x',\
     path = 'imgs/oscillation_1')
 
-    #Q2
+    #Q2==========================================================
     laplace_solver = spring([1.0,0,2.25])
     h = laplace_solver.H(1.5, -0.05)
     t,x = sp.impulse(h,None,np.linspace(0,50,5001))
@@ -140,27 +145,43 @@ if __name__=='__main__':
     ylabel = 'x',
     path ='imgs/oscillation_2')
 
-    #Q3
+    #Q3==========================================================
     freq = np.linspace(1.4,1.6,5)
     laplace_solver.LTI_system(freq)
 
-
-    #Q4
+    #Q4==========================================================
     t,x  = laplace_solver.system([1,0,2],[1,0,3,0])
     t,y = laplace_solver.system([2],[1,0,3,0])
-
     laplace_solver.plotMulti(t,[x,y],\
     title ='Coupled Oscilations: X and Y',\
     xlabel ='t',\
     ylabel ='x',
     path ='imgs/coupled_eq',
+    legend = True, \
     label =['x','y'])
 
-    #Q5
+    #Q5======================================================
     t=np.linspace(0,30e-6,10000)
-    t,y,_ = laplace_solver.TwoPortNetwork(t,100, 1e-6 , 1e-6)
+    laplace_solver.TwoPortNetwork(t,100, 1e-6 , 1e-6, plot= True)
 
 
+    #Q6======================================================
+    tus = np.linspace(0,30e-6,10000)
+    tms = np.linspace(0,30e-3,10000)
+    #input function
+    vi = lambda t : np.cos(1000*t) -np.cos(1e6*t)
+    t ,y , _ = laplace_solver.TwoPortNetwork(tus,100, 1e-6 , 1e-6, vi= vi)
+
+    laplace_solver.plot(t, y,
+    title = 'Output of RLC for t<30u', \
+    path ='imgs/Q6a')
+
+    t ,y , _ = laplace_solver.TwoPortNetwork(tms,100, 1e-6 , 1e-6, vi= vi)
+    laplace_solver.plot(t, y,
+    title = 'Output of RLC for t<30m', \
+    path ='imgs/Q6b')
+
+    #===========================================================
 
 
 

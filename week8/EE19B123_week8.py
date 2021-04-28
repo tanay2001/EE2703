@@ -50,8 +50,14 @@ def customplot(x,y,**kwargs):
     plt.plot(x,y)
     plt.grid(True)
 
-def sympy2LTI(xpr):
-    X=simplify(X)
+@save
+def plotmany(x,y,**kwargs):
+    for id, i in enumerate(y):
+        plt.plot(x,i, label = kwargs['labels'][id])
+        plt.grid(True)
+
+def sympy2LTI(x):
+    X=simplify(x)
     n,d=fraction(X)
     n,d=Poly(n,s), Poly(d,s)
     numerator ,denominator=n.all_coeffs(), d.all_coeffs()
@@ -103,22 +109,20 @@ if __name__ =='__main__':
     w = np.logspace(0,8,801)
 
     #Q0 Low pass filter implemntation 
-    (A,b,V_0) = lowpass(10000,10000,1e-9,1e-9,1.586,1) 
-    print(V_0)
+    A,b,V_0 = lowpass(10000,10000,1e-9,1e-9,1.586,1) 
     Vo = V_0[3] #Output Vo
 
     v = magnitude_response(Vo)
 
     loglogplot(w, abs(v),
             title = 'Low pass Magnitude response',
-            xlabel = r'$\omega',
-            yalbel =r'$|H(omega)',
-            path = 'Q0')
+            xlabel = 'omega',
+            yalbel ='H(omega)',
+            path = 'imgs/Q0')
 
     H = sympy2LTI(Vo)
 
     t = np.linspace(0,5e-3,10000)
-
     # ==============================================================
     #Q1
     t,y=sp.step(H,T=t)
@@ -127,7 +131,7 @@ if __name__ =='__main__':
         title = 'Step Response for low pass filter',
         xlabel = 't',
         ylabel = 'V_o(t)',
-        path = 'Q1')
+        path = 'imgs/Q1')
 
     #==================================================================
     #Q2
@@ -137,55 +141,64 @@ if __name__ =='__main__':
         title ='Low Pass Filter Response to given Input',
         xlabel ='t',
         ylabel ='V_o',
-        path = 'Q2_lp')
-
+        path = 'imgs/Q2_lp')
     #===================================================================
     #Q3
-    (A,b,V) = highpass(10000,10000,1e-9,1e-9,1.586,1)
+    A,b,V = highpass(10000,10000,1e-9,1e-9,1.586,1)
     Vo_HP = V[3] #Output Vo
 
     v_hp = magnitude_response(Vo_HP)
     loglogplot(w, abs(v_hp),
             title ='High Pass Magnitude Responce',
-            ylabel =r'$|H(omega)',
-            xlabel =r'$\omega',
-            path = 'Q3a')
+            ylabel ='H(omega)',
+            xlabel ='omega',
+            path = 'imgs/Q3a')
 
     H2=sympy2LTI(Vo_HP)
 
     t,y=sp.step(H2,T=t)
     customplot(t,y,
-        title ='Step Response for high pass filter',
+        title ='Step Response for High pass filter',
         xlabel = 't',
         ylabel = 'V_o',
-        path = 'Q3b')
+        path = 'imgs/Q3b')
     #====================================================================
-    #Q4
-    t_high=np.linspace(0,0.0001,10000)
-    high_damp = lambda t,f,decay : np.sin(2*np.pi*f*t)*np.exp(-decay*t)*(t>0)
-    customplot(t_high,high_damp(t_high, 5e6, 0.5),
-        title = 'High frequency damped sinusoid',
+    #Q4 & Q5
+    t_high=np.linspace(0,0.00001,10000)
+    high_damp = lambda t : np.sin(2*np.pi*5e5*t)*np.exp(-0.5*t)*(t>0)
+    customplot(t_high,high_damp(t_high),
+        title = 'High frequency damped sinosoid',
         xlabel = 't',
         ylabel = 'Vi',
-        path ='Q4a')
+        path ='imgs/Q4a')
 
     t_low=np.linspace(0,10,1000)
-    low_damp = lambda t,f,decay : np.sin(2*np.pi*f*t)*np.exp(-decay*t)*(t>0)
-    plot(t_low,low_damp(t_low, f =1 , decay =0.5),
-        title = 'Low frequency damped sinusoid',
+    low_damp = lambda t : np.sin(2*np.pi*1*t)*np.exp(-0.5*t)*(t>0)
+    customplot(t_low,low_damp(t_low),
+        title = 'Low frequency damped sinosoid',
         xlabel = 't',
         ylabel = 'Vi',
-        path ='Q4b')
+        path ='imgs/Q4b')
 
     t_high,y_high,_ = sp.lsim(H2,high_damp(t_high),t_high)
 
     t_low,y_low,_ = sp.lsim(H2,low_damp(t_low),t_low)
 
-    #plotting input and ouput voltage waveforms on the same graph
-    plotter(t_high,high_damping(t_high),'High frequency damped sinusoid',r'$t\rightarrow$',r'$V_i(t)\rightarrow$',grid=True, show=False)
-    plotter(t_high,y_high,r'High Pass Filter Response to High Frequency Damped Sinusoid',r'$t\rightarrow$',r'$V_o(t)\rightarrow$',grid=True,legend=[r'$V_{i}$',r'$V_{o}$'],if_legend=True)
+    plotmany(t_high,[y_high, high_damp(t_high)],
+            title = 'High Pass Filter Response to High Frequency Damped Signal',
+            xlabel = 't',
+            ylabel = 'Vi(t)',
+            labels =['Vo','Vi'],
+            legend = True,
+            path = 'imgs/Q5a')
+   
+    plotmany(t_low,[y_low, low_damp(t_low)],
+            title = 'High Pass Filter Response to Low Frequency Damped Signal',
+            xlabel = 't',
+            ylabel = 'Vi(t)',
+            labels =['Vo','Vi'],
+            legend = True,
+            path = 'imgs/Q5b')
 
-    plotter(t_low,low_damping(t_low),'Low frequency damped sinusoid',r'$t\rightarrow$',r'$V_i(t)\rightarrow$',grid=True, show=False)
-    plotter(t_low,y_low,r'High Pass Filter Response to Low Frequency Damped Sinusoid',r'$t\rightarrow$',r'$V_o(t)\rightarrow$',grid=True,legend=[r'$V_{i}$',r'$V_{o}$'],if_legend=True)
 
 

@@ -17,7 +17,7 @@ if os.path.isdir('imgs'):
 else:
     os.mkdir('imgs')
 #===================================================
-def save(function):
+def saveplots(function):
         '''
         decorator function
         adds plot label/title/legend/save file
@@ -30,7 +30,7 @@ def save(function):
             print('File saved at {}'.format(kwargs['path']))
             plt.clf()
         return fcall
-@save
+@saveplots
 def customplot(x,y,**kwargs):
     plt.figure()
     plt.subplot(2,1,1)
@@ -104,7 +104,8 @@ if __name__ =='__main__':
         As questions demainds accuracy till 6 digits we need to iteratively keeps computing till it error falls
         '''
         T = 8*np.pi
-        Y_old = 0
+        y_old = 0
+        function = func_dict[func]
         while True:
             #Time 
             dt = T/N
@@ -113,12 +114,12 @@ if __name__ =='__main__':
             W = N*dw
             t = np.linspace(-T/2,T/2,N+1)[:-1]
             w = np.linspace(-W/2,W/2,N+1)[:-1]
-            y = gauss(t)
-            Y_new = dt/(2*np.pi) * fftshift(fft(ifftshift(y)))
-            error = np.sum(np.abs(Y_new[::2]) - Y_old)
-            Y_old = Y_new
+            y = function(t)
+            y_new = dt/(2*np.pi) * fftshift(fft(ifftshift(y)))
+            error = np.sum(np.abs(y_new[::2]) - y_old)
+            y_old = y_new
             if error < threshold:
-                customplot(w,Y_new,
+                customplot(w,y_new,
                 func =func,
                 path ='imgs/Q'+func,
                 xlim = 5,

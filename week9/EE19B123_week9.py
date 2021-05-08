@@ -91,12 +91,6 @@ if __name__ =='__main__':
         y= func_dict[func](t)
         Y = fftshift(fft(y))/N
         w = np.linspace(-w_lim,w_lim,steps)[:-1]
-        if func == 'gauss' : 
-            Y = fftshift(np.abs(fft(y)))/N
-            # Normalizing 
-            Y = Y*np.sqrt(2*np.pi)/np.max(Y)
-            Y_ = np.exp(-w**2/2)*np.sqrt(2*np.pi)
-            print(f"max error is {max(np.abs(Y-Y_))}")
 
         customplot(w,Y,
         func =func,
@@ -104,14 +98,43 @@ if __name__ =='__main__':
         xlim = xlim ,
         ylimit = ylimit,
         phase_limit = phase_limit)
-        return Y,w
+
+    def dft_gaussian(func,threshold=1e-6,N=128):
+        '''
+        As questions demainds accuracy till 6 digits we need to iteratively keeps computing till it error falls
+        '''
+        T = 8*np.pi
+        Y_old = 0
+        while True:
+            #Time 
+            dt = T/N
+            #Frequency 
+            dw = 2*np.pi/T
+            W = N*dw
+            t = np.linspace(-T/2,T/2,N+1)[:-1]
+            w = np.linspace(-W/2,W/2,N+1)[:-1]
+            y = gauss(t)
+            Y_new = dt/(2*np.pi) * fftshift(fft(ifftshift(y)))
+            error = np.sum(np.abs(Y_new[::2]) - Y_old)
+            Y_old = Y_new
+            if error < threshold:
+                customplot(w,Y_new,
+                func =func,
+                path ='imgs/Q'+func,
+                xlim = 5,
+                phase_limit = 1e-3 )
+                print(f"Error in Gaussian case is {error}")
+                break
+
+            T*=2
+            N*=2
 
     #sample Questions =========================================
-    Y1,w1= dft('sin', xlim=10)
-    Y2, w2 = dft('modul',xlim=40, ylimit = 1)
+    dft('sin', xlim=10)
+    dft('modul',xlim=40, ylimit = 1)
     #assigments questions =====================================
-    Y3,w3 = dft('cos^3',xlim=15, steps= 129 , w_lim=16, N = 128, ylimit=1)
-    Y4,w4 = dft('sin^3',xlim=15)
-    Y5,w5 = dft('coscos',xlim=40)
-    Y6,w6 =dft('gauss',N=512,r=8*np.pi,w_lim=32,xlim=10)
+    dft('cos^3',xlim=15, steps= 129 , w_lim=16, N = 128, ylimit=1)
+    dft('sin^3',xlim=15)
+    dft('coscos',xlim=40)
+    dft_gaussian('gauss')
 

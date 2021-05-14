@@ -164,7 +164,6 @@ if __name__=='__main__':
     t=np.linspace(0,30e-6,10000)
     laplace_solver.TwoPortNetwork(t,100, 1e-6 , 1e-6, plot= True)
 
-
     #Q6======================================================
     tus = np.linspace(0,30e-6,10000)
     tms = np.linspace(0,30e-3,10000)

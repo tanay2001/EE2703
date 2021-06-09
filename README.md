@@ -5,8 +5,11 @@ assignment codes for EE2703 course at IITM
 each week is in the following format
 ```
     .
-    |-Question pdf
-    |-imgs/ directory containing all images
-    |-python script to reproduce the results
-    |-zip file having all latex related documents
+    |--Question pdf
+    |--imgs/ directory containing all images
+    |--python script to reproduce the results
+    |--zip file having all latex related documents
     
+```
+apl directory is the environment<br>
+Each python script explains how to run it and appropiate test cases have been written to make sure it runs right xD

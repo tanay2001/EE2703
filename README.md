@@ -12,4 +12,4 @@ each week is in the following format
     
 ```
 apl directory is the environment<br>
-Each python script explains how to run it and appropiate test cases have been written to make sure it runs right xD
+Each python script has a comment on how to run it and appropiate test cases have been written to make sure it runs right xD
